@@ -1722,36 +1722,152 @@ FortranCodeGeneration_locatedNode::unparseULongLongIntVal(SgExpression* expr, Sg
   cur << ulonglongint_val->get_value();
 }
 
+// DQ (8/14/2007): Use the base class implementation to support unparing of values, we can
+// provide Fortran specific variations if required later.
+#endif
+
+#if 1 /*RIKEN*/
+
+/* Bring back unparsers for reals.  (The endif above is moved up
+   here).  They are needed to print infinity values.  The code is
+   copied from the corresponding printers in
+   "unparseLanguageIndependentConstructs.C". */
+
+/* Printing infinity is approximated by a huge value (a value in
+   range).  The conventions of "1.e99_kind" cannot be used because a
+   constant variable representing the kind is not readily available
+   generally.  IEEE inf needs the ieee-module and is not readily
+   available generally, either.  Also, it assumes constant folding
+   never introduces non-numbers. */
+
+#define NO_LITERAL_NAN_IN_FORTRAN 0
+
+#endif /*RIKEN*/
+
 void 
-FortranCodeGeneration_locatedNode::unparseFLoatVal(SgExpression* expr, SgUnparse_Info& info) 
+FortranCodeGeneration_locatedNode::unparseFloatVal(SgExpression* expr, SgUnparse_Info& info)
 {
+#if 0 /*RIKEN*/
   // Sage node corresponds to a Fortran real constant
   SgFloatVal* float_val = isSgFloatVal(expr);
   ROSE_ASSERT(float_val != NULL);
   cur << float_val->get_value();
+#else /*RIKEN*/
+  SgFloatVal* e = isSgFloatVal(expr);
+  ROSE_ASSERT(e != NULL);
+  float v = e->get_value();
+  if (v == std::numeric_limits<float>::infinity())
+  {
+    /* Approximation for inf: */
+    curprint("HUGE(0.E0)");
+  }
+  else if ((v != v) || (v == std::numeric_limits<float>::quiet_NaN()))
+  {
+    cerr << "Error: Cannot unparse constant NaN in Fortran" << endl;
+    ROSE_ASSERT(NO_LITERAL_NAN_IN_FORTRAN);
+  }
+  else if (v == std::numeric_limits<float>::signaling_NaN())
+  {
+    cerr << "Error: Cannot unparse constant NaN in Fortran" << endl;
+    ROSE_ASSERT(NO_LITERAL_NAN_IN_FORTRAN);
+  }
+  else
+  {
+    string s = e->get_valueString();
+    if (s != "")
+    {
+      curprint(e->get_valueString());
+    }
+    else
+    {
+      curprint(tostring(v));
+    }
+  }
+#endif /*RIKEN*/
 }
 
 void
-FortranCodeGeneration_locatedNode::unparseDblVal(SgExpression* expr, SgUnparse_Info& info)
+FortranCodeGeneration_locatedNode::unparseDoubleVal(SgExpression* expr, SgUnparse_Info& info)
 {
+#if 0 /*RIKEN*/
   // Sage node corresponds to a Fortran real constant
   SgDoubleVal* dbl_val = isSgDoubleVal(expr);
   ROSE_ASSERT(dbl_val != NULL);
   cur << dbl_val->get_value(); 
+#else /*RIKEN*/
+  SgDoubleVal* e = isSgDoubleVal(expr);
+  ROSE_ASSERT(e != NULL);
+  double v = e->get_value();
+  if (v == std::numeric_limits<double>::infinity())
+  {
+    /* Approximation for inf: */
+    curprint("HUGE(0.D0)");
+  }
+  else if ((v != v) || (v == std::numeric_limits<double>::quiet_NaN()))
+  {
+    cerr << "Error: Cannot unparse constant NaN in Fortran" << endl;
+    ROSE_ASSERT(NO_LITERAL_NAN_IN_FORTRAN);
+  }
+  else if (v == std::numeric_limits<double>::signaling_NaN())
+  {
+    ROSE_ASSERT(NO_LITERAL_NAN_IN_FORTRAN);
+  }
+  else
+  {
+    string s = e->get_valueString();
+    if (s != "")
+    {
+      curprint(s);
+    }
+    else
+    {
+      curprint(tostring(v));
+    }
+  }
+#endif /*RIKEN*/
 }
 
-void 
-FortranCodeGeneration_locatedNode::unparseLongDblVal(SgExpression* expr, SgUnparse_Info& info)
+void
+FortranCodeGeneration_locatedNode::unparseLongDoubleVal(SgExpression* expr, SgUnparse_Info& info)
 {
+#if 0 /*RIKEN*/
   // Sage node corresponds to a Fortran real constant
   SgLongDoubleVal* longdbl_val = isSgLongDoubleVal(expr);
   ROSE_ASSERT(longdbl_val != NULL);
   cur << longdbl_val->get_value();
+#else /*RIKEN*/
+  SgLongDoubleVal* e = isSgLongDoubleVal(expr);
+  ROSE_ASSERT(e != NULL);
+  long double v = e->get_value();
+  if (v == std::numeric_limits<long double>::infinity())
+  {
+    /* Approximation for inf: */
+    curprint("HUGE(0.Q0)");
+  }
+  else if ((v != v) || (v == std::numeric_limits<long double>::quiet_NaN()))
+  {
+    cerr << "Error: Cannot unparse constant NaN in Fortran" << endl;
+    ROSE_ASSERT(NO_LITERAL_NAN_IN_FORTRAN);
+  }
+  else if (v == std::numeric_limits<long double>::signaling_NaN())
+  {
+    cerr << "Error: Cannot unparse constant NaN in Fortran" << endl;
+    ROSE_ASSERT(NO_LITERAL_NAN_IN_FORTRAN);
+  }
+  else
+  {
+    string s = e->get_valueString();
+    if (s != "")
+    {
+      curprint(s);
+    }
+    else
+    {
+      curprint(tostring(v));
+    }
+  }
+#endif /*RIKEN*/
 }
-
-// DQ (8/14/2007): Use the base class implementation to support unparing of values, we can
-// provide Fortran specific variations if required later.
-#endif
 
 //----------------------------------------------------------------------------
 //  helpers

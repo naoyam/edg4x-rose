@@ -117,6 +117,11 @@ class FortranCodeGeneration_locatedNode : public UnparseLanguageIndependentConst
 #else
           virtual void unparseStringVal               (SgExpression* expr, SgUnparse_Info& info);  
           virtual void unparseBoolVal                 (SgExpression* expr, SgUnparse_Info& info);  
+#if 1 /*RIKEN*/
+          virtual void unparseFloatVal                (SgExpression* expr, SgUnparse_Info& info);
+          virtual void unparseDoubleVal               (SgExpression* expr, SgUnparse_Info& info);
+          virtual void unparseLongDoubleVal           (SgExpression* expr, SgUnparse_Info& info);
+#endif /*RIKEN*/
 #endif
           virtual void unparseFuncCall                (SgExpression* expr, SgUnparse_Info& info);  
           virtual void unparsePointStOp               (SgExpression* expr, SgUnparse_Info& info);  
