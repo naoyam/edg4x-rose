@@ -2,7 +2,22 @@
 
 This file contains memo of local changes by RIKEN AICS.
 
-*** 2014-09-18    <matu@acm.org>
+*** 2014-09-26    <matu@acm.org>
+
+	| commit a51ab392ff951aacbcd168b7b4957e0f29d6b616
+	| Author: Motohiko Matsuda <matu@acm.org>
+	| Date:   Fri Sep 26 20:24:46 2014 +0900
+	| 
+	|     (RIKEN) Fix unparsing Inf in Fortran.
+
+** Unparsing Inf literal constants
+
+Problem: Unparsing "1.e99_kind4" generates "__builtin_huge_valf()".
+
+Fix: Override C-printer by Fortran-printer.  It approximates Inf by
+HUGE, because it is difficult to output Inf portably.
+
+*** 2014-09-26    <matu@acm.org>
 
 	| commit 53b8e823b3fda49d69e57863e5fa7d4143a725fd
 	| Author: Motohiko Matsuda <matu@acm.org>
