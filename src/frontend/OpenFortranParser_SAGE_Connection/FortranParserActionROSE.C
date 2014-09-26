@@ -7474,8 +7474,37 @@ void c_action_label(Token_t * lbl)
 
                             // DQ (1/24/2011): Default name for procedure to use as declaration for symbol needed for function reference...(where required)...
                             SgName programName = "procedure";
+#if 0 /*RIKEN*/
                             ROSE_ASSERT(globalScope->symbol_exists(programName) == true);
                             functionSymbol = globalScope->lookup_function_symbol(programName);
+#else /*RIKEN*/
+                            /* (Make a function from a function pointer,
+                               when PROCEDURE is not found). */
+                            if (globalScope->symbol_exists(programName)) {
+                                functionSymbol = globalScope
+                                    ->lookup_function_symbol(programName);
+                            } else {
+                                /* (See the action of R1214). */
+                                /* (Unsure to use variableName or
+                                   programName ("procedure")) */
+                                /* (Skip globalScope->insert_symbol
+                                   (variableName, functionSymbol)). */
+
+                                SgFunctionType*
+                                    t = isSgFunctionType(variableSymbol
+                                                         ->get_declaration()
+                                                         ->get_type());
+                                SgProcedureHeaderStatement*
+                                    d = new SgProcedureHeaderStatement(
+                                        variableName, t, NULL);
+                                setSourcePosition(d->get_parameterList());
+                                setSourcePosition(d);
+                                d->set_definingDeclaration(d);
+                                d->set_scope(globalScope);
+                                d->set_parent(globalScope);
+                                functionSymbol = new SgFunctionSymbol(d);
+                            }
+#endif /*RIKEN*/
                             ROSE_ASSERT(functionSymbol != NULL);
 
                             ROSE_ASSERT(functionSymbol->get_declaration() != NULL);
@@ -12249,7 +12278,10 @@ void c_action_label(Token_t * lbl)
         ROSE_ASSERT(endKeyword != NULL);
         resetEndingSourcePosition(astScopeStack.front(), endKeyword);
 
+#if 0 /*RIKEN*/
+        /* (Delete the wrong assertion; Do-loops can be in one line). */
         ROSE_ASSERT(astScopeStack.front()->get_endOfConstruct()->get_line() != astScopeStack.front()->get_startOfConstruct()->get_line());
+#endif /*RIKEN*/
 
         setStatementNumericLabel(astScopeStack.front(), label);
 
@@ -13626,10 +13658,11 @@ void c_action_label(Token_t * lbl)
                 ROSE_ASSERT(expression->get_parent() != NULL);
             }
             // Process this second because the unit expression is deeper on the stack!
-            else if ((strncasecmp(name->text, "unit", 4) == 0) || (strncmp(
+            /*RIKEN*/ /* (Add parentheses for warnings). */
+            else if ((strncasecmp(name->text, "unit", 4) == 0) || ((strncmp(
                                     name->text, "defaultString", 13) == 0)
-                    && (readStatement->get_unit() == NULL))
-            {
+                    && (readStatement->get_unit() == NULL)))
+             {
                 // printf ("Processing token = %s as unit spec expression = %s \n",name->text,expression->class_name().c_str());
                 readStatement->set_unit(expression);
             }
@@ -13804,9 +13837,10 @@ void c_action_label(Token_t * lbl)
             // The "unit=" string is optional, if it was not present then a toekn was pushed onto the stack with the text value "defaultString"
             // if ( (strncasecmp(name->text,"fmt",3) == 0) || (strncmp(name->text,"defaultString",13) == 0) && (writeStatement->get_format() == NULL) )
             // if ( (strncasecmp(name->text,"fmt",3) == 0) || (strncmp(name->text,"defaultString",13) == 0) && (writeStatement->get_format() == NULL) && initalStackDepth >= 2)
-            if ((strncasecmp(name->text, "fmt", 3) == 0) || (strncmp(name->text,
+            /*RIKEN*/ /* (Add parentheses for warnings). */
+            if ((strncasecmp(name->text, "fmt", 3) == 0) || ((strncmp(name->text,
                                     "defaultString", 13) == 0) && (writeStatement->get_format()
-                            == NULL) && numberOfDefaultOptions == 2)
+                            == NULL) && numberOfDefaultOptions == 2))
             {
                 // printf ("Processing token = %s as format spec \n",name->text);
                 // writeStatement->set_format(expression);
@@ -13817,9 +13851,10 @@ void c_action_label(Token_t * lbl)
                 labelRefExp->set_parent(writeStatement);
             }
             // Process this second because the unit expression is deeper on the stack!
-            else if ((strncasecmp(name->text, "unit", 4) == 0) || (strncmp(
+            /*RIKEN*/ /* (Add parentheses for warnings). */
+            else if ((strncasecmp(name->text, "unit", 4) == 0) || ((strncmp(
                                     name->text, "defaultString", 13) == 0)
-                    && (writeStatement->get_unit() == NULL))
+                    && (writeStatement->get_unit() == NULL)))
             {
                 // printf ("Processing token = %s as unit spec \n",name->text);
                 writeStatement->set_unit(expression);
@@ -14930,7 +14965,12 @@ void c_action_label(Token_t * lbl)
 
         SgRewindStatement* rewindStatement = new SgRewindStatement();
         ROSE_ASSERT(rewindStatement != NULL);
+#if 0 /*RIKEN*/
         setSourcePosition(rewindStatement);
+#else /*RIKEN*/
+        /* (Set source position). */
+        setSourcePosition(rewindStatement, rewindKeyword);
+#endif /*RIKEN*/
 
 #if 0
         // Output debugging information about saved state (stack) information.
@@ -15401,7 +15441,19 @@ void c_action_label(Token_t * lbl)
         printf("In c_action_inquire_spec(): specName = %p = %s \n", specName,
                 specName ? specName->text : "NULL");
 
+#if 0 /*RIKEN*/
         ROSE_ASSERT(specName != NULL);
+#else /*RIKEN*/
+        if (specName == NULL) {
+            /* Add an entry for omitted "UNIT=". */
+            Token_t *t = new Token_t();
+            t->line = 0;
+            t->col = 0;
+            t->type = 0;
+            t->text = strdup("UNIT");
+            specName = t;
+        }
+#endif /*RIKEN*/
         astNameStack.push_front(specName);
 
 #if 1
@@ -16498,6 +16550,7 @@ void c_action_label(Token_t * lbl)
                         // if (classDefinition->symbol_exists(symbolName) == false)
                         if (currentScope->symbol_exists(symbolName) == false)
                         {
+                            /*RIKEN*/ /* (Do not replace SgAliasSymbol). */
                             SgAliasSymbol* aliasSymbol = new SgAliasSymbol(symbol,/* isRenamed */
                                     false);
 
@@ -16576,15 +16629,58 @@ void c_action_label(Token_t * lbl)
 #if 0
                                 cout << "USE alias symbol for symbol type " << symbol->class_name() << endl;
 #endif
+#if 0 /*RIKEN*/
                                 aliasSymbol = new SgAliasSymbol(symbol, true,
                                         local_name);
+#else /*RIKEN*/
+                                /* (ACTIVE PART). */
+                                /* (Switch SgAliasSymbol by
+                                   SgRenameSymbol to not replace a
+                                   function name by its rename). */
+                                assert(hasRenameList);
+                                SgFunctionSymbol*
+                                    fs = isSgFunctionSymbol(symbol);
+                                if (fs != NULL) {
+                                    SgFunctionDeclaration*
+                                        d = isSgFunctionDeclaration(
+                                            fs->get_declaration());
+                                    assert(d != NULL);
+                                    aliasSymbol = new SgRenameSymbol(
+                                        d, symbol, local_name);
+                                } else {
+                                    aliasSymbol = new SgAliasSymbol(
+                                        symbol, true, local_name);
+                                }
+#endif /*RIKEN*/
                             }
                             currentScope->insert_symbol(local_name, aliasSymbol);
                             setOfRenamedSymbols.insert(symbol);
 #else
                             bool isRenamed = hasRenameList;
                             SgName declarationName = renamePair->get_local_name();
+#if 0 /*RIKEN*/
                             SgAliasSymbol* aliasSymbol = new SgAliasSymbol(symbol,/* isRenamed = true */true,declarationName);
+#else /*RIKEN*/
+                            /* (NON-ACTIVE PART). */
+                            /* (Switch SgAliasSymbol by
+                               SgRenameSymbol to not replace a
+                               function name by its rename). */
+                            assert(hasRenameList);
+                            SgFunctionSymbol*
+                                fs = isSgFunctionSymbol(symbol);
+                            SgSymbol* aliasSymbol;
+                            if (fs != NULL) {
+                                SgFunctionDeclaration*
+                                    d = isSgFunctionDeclaration(
+                                        fs->get_declaration());
+                                assert(d != NULL);
+                                aliasSymbol = new SgRenameSymbol(
+                                    d, symbol, local_name);
+                            } else {
+                                aliasSymbol = new SgAliasSymbol(
+                                    symbol, true, local_name);
+                            }
+#endif /*RIKEN*/
 #if 1
                             if ( SgProject::get_verbose() > DEBUG_RULE_COMMENT_LEVEL )
                             printf ("R1109 (non-empty astNodeStack)Insert aliased symbol name = %s (renamed = %s)\n",declarationName.str(),isRenamed ? "true" : "false");
@@ -16619,6 +16715,7 @@ void c_action_label(Token_t * lbl)
                     {
                         // Add the symbols not renamed explicitly.
                         SgName symbolName = symbol->get_name();
+                        /*RIKEN*/ /* (Do not replace SgAliasSymbol). */
                         SgAliasSymbol* aliasSymbol = new SgAliasSymbol(symbol,/* isRenamed */
                                 false);
 #if 0
@@ -16718,16 +16815,59 @@ void c_action_label(Token_t * lbl)
 #if 0
                                 cout << "USE ONLY alias symbol for symbol type " << symbol->class_name() << endl;
 #endif
+#if 0 /*RIKEN*/
                                 aliasSymbol = isRenamed ? new SgAliasSymbol(symbol,
                                         true, local_name) : new SgAliasSymbol(
                                         symbol, false);
+#else /*RIKEN*/
+                                /* (ACTIVE PART). */
+                                /* (Switch SgAliasSymbol by
+                                   SgRenameSymbol to not replace a
+                                   function name by its rename). */
+                                SgFunctionSymbol*
+                                    fs = isSgFunctionSymbol(symbol);
+                                if ((fs != NULL) && isRenamed) {
+                                    SgFunctionDeclaration*
+                                        d = isSgFunctionDeclaration(
+                                            fs->get_declaration());
+                                    assert(d != NULL);
+                                    aliasSymbol = new SgRenameSymbol(
+                                        d, symbol, local_name);
+                                } else if (isRenamed) {
+                                    aliasSymbol = new SgAliasSymbol(
+                                        symbol, true, local_name);
+                                } else {
+                                    aliasSymbol = new SgAliasSymbol(
+                                        symbol, false);
+                                }
+#endif /*RIKEN*/
                             }
                             currentScope->insert_symbol(local_name, aliasSymbol);
 #else
                             SgAliasSymbol* aliasSymbol = NULL;
                             if (isRenamed == true)
                             {
+#if 0 /*RIKEN*/
                                 aliasSymbol = new SgAliasSymbol(symbol,isRenamed,renamePair->get_local_name());
+#else /*RIKEN*/
+                                /* (NON-ACTIVE PART). */
+                                /* (Switch SgAliasSymbol by
+                                   SgRenameSymbol to not replace a
+                                   function name by its rename). */
+                                SgFunctionSymbol*
+                                    fs = isSgFunctionSymbol(symbol);
+                                if (fs != NULL) {
+                                    SgFunctionDeclaration*
+                                        d = isSgFunctionDeclaration(
+                                            fs->get_declaration());
+                                    assert(d != NULL);
+                                    aliasSymbol = new SgRenameSymbol(
+                                        d, symbol, local_name);
+                                } else {
+                                    aliasSymbol = new SgAliasSymbol(
+                                        symbol, true, local_name);
+                                }
+#endif /*RIKEN*/
                             }
                             else
                             {
@@ -16978,6 +17118,14 @@ void c_action_label(Token_t * lbl)
             // that there was no renaming. This permits a consistant interface when they are processed by R1109.
             for (int i = 0; i < count; i++)
             {
+#if 1 /*RIKEN*/
+                /* (Note frist, the number of elements is not equal to
+                   COUNT; Second, more than one elements can be popped
+                   off in a loop). */
+                if (astNameStack.empty()) {
+                    break;
+                }
+#endif /*RIKEN*/
                 // Construct the name pair for the case of the "only" clause, where there is no renaming.
                 ROSE_ASSERT(astNameStack.empty() == false);
                 SgName name = astNameStack.front()->text;
