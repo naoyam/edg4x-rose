@@ -882,12 +882,10 @@ cout.flush();
                        ||
                           //if the command line includes "-D" options
                           ! getProject()->get_macroSpecifierList().empty()
-#if 0
-            // SKW: disabled because the "*_postprocessed" dregs cause "ompLoweringTests/fortran" to fail 'distcleancheck'
                        ||
+                          //RIKEN (Re-enable below, once was commented out.)
                           //if the command line includes "-I" options
                           ! getProject()->get_includeDirectorySpecifierList().empty()
-#endif
                       );
 
                file->set_requires_C_preprocessor(requires_C_preprocessor);
