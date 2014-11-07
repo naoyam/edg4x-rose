@@ -13641,10 +13641,14 @@ void c_action_label(Token_t * lbl)
             // The "unit=" string is optional, if it was not present then a token was pushed onto the stack with the text value "defaultString"
             // if ( (strncasecmp(name->text,"fmt",3) == 0) || (strncmp(name->text,"defaultString",13) == 0) && (readStatement->get_format() == NULL) )
             // if ( (strncasecmp(name->text,"fmt",3) == 0) || ( (strncmp(name->text,"defaultString",13) == 0) && (readStatement->get_format() == NULL) && (initalStackDepth >= 2) ) )
-            if ((strncasecmp(name->text, "fmt", 3) == 0) || ((strncmp(name->text,
-                                            "defaultString", 13) == 0) && (readStatement->get_format()
-                                    == NULL) && (initalStackDepth >= 2) && (lookAheadName != NULL
-                                    && strncmp(lookAheadName->text, "defaultString", 13) == 0)))
+
+            if ((strncasecmp(name->text, "fmt", 3) == 0)
+                || ((strncmp(name->text, "defaultString", 13) == 0)
+                    && (readStatement->get_format() == NULL)
+                    && (readStatement->get_namelist() == NULL)
+                    && (initalStackDepth >= 2)
+                    && (lookAheadName != NULL
+                        && strncmp(lookAheadName->text, "defaultString", 13) == 0)))
             {
                 // printf ("Processing token = %s as format spec \n",name->text);
                 // DQ (12/3/2010): This code fails for test2007_211.f.
@@ -13652,7 +13656,15 @@ void c_action_label(Token_t * lbl)
                 SgExpression* labelRefExp = buildLabelRefExp(expression);
                 ROSE_ASSERT(labelRefExp != NULL);
                 // printf ("In c_action_read_stmt(): readStatement->set_format(%p = %s) \n",labelRefExp,labelRefExp->class_name().c_str());
-                readStatement->set_format(labelRefExp);
+                //RIKEN
+                // (When the second position is an unrecognized
+                // symbol, it is a namelist which was converted to a
+                // function reference).
+                if (isSgFunctionRefExp(labelRefExp) != NULL) {
+                  readStatement->set_namelist(labelRefExp);
+                } else {
+                  readStatement->set_format(labelRefExp);
+                }
                 labelRefExp->set_parent(readStatement);
 
                 ROSE_ASSERT(expression->get_parent() != NULL);
@@ -13838,16 +13850,26 @@ void c_action_label(Token_t * lbl)
             // if ( (strncasecmp(name->text,"fmt",3) == 0) || (strncmp(name->text,"defaultString",13) == 0) && (writeStatement->get_format() == NULL) )
             // if ( (strncasecmp(name->text,"fmt",3) == 0) || (strncmp(name->text,"defaultString",13) == 0) && (writeStatement->get_format() == NULL) && initalStackDepth >= 2)
             /*RIKEN*/ /* (Add parentheses for warnings). */
-            if ((strncasecmp(name->text, "fmt", 3) == 0) || ((strncmp(name->text,
-                                    "defaultString", 13) == 0) && (writeStatement->get_format()
-                            == NULL) && numberOfDefaultOptions == 2))
+            if ((strncasecmp(name->text, "fmt", 3) == 0)
+                || ((strncmp(name->text, "defaultString", 13) == 0)
+                    && (writeStatement->get_format() == NULL)
+                    && (writeStatement->get_namelist() == NULL)
+                    && numberOfDefaultOptions == 2))
             {
                 // printf ("Processing token = %s as format spec \n",name->text);
                 // writeStatement->set_format(expression);
                 ROSE_ASSERT(expression != NULL);
                 SgExpression* labelRefExp = buildLabelRefExp(expression);
                 ROSE_ASSERT(labelRefExp != NULL);
-                writeStatement->set_format(labelRefExp);
+                //RIKEN
+                // (When the second position is an unrecognized
+                // symbol, it is a namelist which was converted to a
+                // function reference).
+                if (isSgFunctionRefExp(labelRefExp) != NULL) {
+                  writeStatement->set_namelist(labelRefExp);
+                } else {
+                  writeStatement->set_format(labelRefExp);
+                }
                 labelRefExp->set_parent(writeStatement);
             }
             // Process this second because the unit expression is deeper on the stack!
