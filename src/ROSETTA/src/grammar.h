@@ -49,6 +49,10 @@
 //Liao 5/29/2009: Add IR node support for OpenMP
 #define USE_OMP_IR_NODES 1
 
+//RIKEN
+#define USE_ACC_IR_NODES 1
+//RIKEN
+
 // DQ (4/12/2011): Added Java specific IR nodes.
 #define USE_JAVA_IR_NODES 1
 

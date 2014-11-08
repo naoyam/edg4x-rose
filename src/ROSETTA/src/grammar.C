@@ -3395,7 +3395,13 @@ Grammar::GrammarNodeInfo Grammar::getGrammarNodeInfo(Terminal* grammarnode) {
         ||nodeName == "SgOmpTaskStatement"
         ||nodeName == "SgOmpForStatement"
         ||nodeName == "SgOmpDoStatement"
-        ||nodeName == "SgExprListExp");
+        ||nodeName == "SgExprListExp"
+//RIKEN
+#if (USE_ACC_IR_NODES == 1)
+        ||nodeName == "SgAccBlock"
+#endif
+//RIKEN
+      );
   }
   return info;
 }
@@ -3701,6 +3707,14 @@ Grammar::buildTreeTraversalFunctions(Terminal& node, StringUtility::FileWithLine
 //                    outputFile << "if (idx < p_sections.size()) return p_sections[idx];\n"
 //                               << "else return p_clauses[idx - p_sections.size()];\n";
 //                  }
+//RIKEN
+#if (USE_ACC_IR_NODES == 1)
+               else if (string(node.getName()) == "SgAccBlock")
+                 {
+                   outputFile << "return p_body;\n";
+                 }
+#endif
+//RIKEN
                else if (isSTLContainerPtr(typeString.c_str()))
                   {
                     outputFile << "ROSE_ASSERT(idx < p_" << gs->getVariableNameString() << "->size());\n";
@@ -3817,6 +3831,15 @@ Grammar::buildTreeTraversalFunctions(Terminal& node, StringUtility::FileWithLine
 //                               << "else return (size_t) -1;\n"
 //                               << "}\n";
 //                  }
+//RIKEN
+#if (USE_ACC_IR_NODES == 1)
+               else if (string(node.getName()) == "SgAccBlock")
+                 {
+                   outputFile
+                     << "return 0;\n";
+                 }
+#endif
+//RIKEN
                else if (isSTLContainerPtr(typeString.c_str()))
                   {
                     string memberVariableName = gs->getVariableNameString();

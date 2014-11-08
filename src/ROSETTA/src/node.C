@@ -101,6 +101,13 @@ Grammar::setUpNodes ()
          "OmpClause", "OmpClauseTag", false);
 #endif
      
+//RIKEN
+#if (USE_ACC_IR_NODES == 1)
+     NEW_TERMINAL_MACRO(AccDirective, "AccDirective", "ACC_DIRECTIVE_TYPETAG");
+     NEW_TERMINAL_MACRO(AccClause, "AccClause", "ACC_CLAUSE_TYPETAG");
+#endif
+//RIKEN
+
   // DQ (10/3/2008): Support for the Fortran "USE" statement and its rename list option.
      NEW_TERMINAL_MACRO (RenamePair,     "RenamePair",     "TEMP_Rename_Pair" );
 
@@ -205,7 +212,13 @@ Grammar::setUpNodes ()
   // a number of the new Fortran specific IRnodes, etc.).
   // NEW_NONTERMINAL_MACRO (LocatedNodeSupport, CommonBlockObject | InitializedName | InterfaceBody | HeaderFileBody | RenamePair | OmpClause , "LocatedNodeSupport", "LocatedNodeSupportTag", false );
   // NEW_NONTERMINAL_MACRO (LocatedNodeSupport, CommonBlockObject | InitializedName | InterfaceBody | HeaderFileBody | RenamePair | OmpClause | UntypedNode, "LocatedNodeSupport", "LocatedNodeSupportTag", false );
-     NEW_NONTERMINAL_MACRO (LocatedNodeSupport, CommonBlockObject | InitializedName | InterfaceBody | HeaderFileBody | RenamePair | JavaMemberValuePair | OmpClause | UntypedNode, "LocatedNodeSupport", "LocatedNodeSupportTag", false );
+     NEW_NONTERMINAL_MACRO (LocatedNodeSupport, CommonBlockObject | InitializedName | InterfaceBody | HeaderFileBody | RenamePair | JavaMemberValuePair | OmpClause
+//RIKEN
+#if (USE_ACC_IR_NODES == 1)
+       | AccDirective | AccClause
+#endif
+//RIKEN
+       | UntypedNode, "LocatedNodeSupport", "LocatedNodeSupportTag", false );
 
   // DQ (3/24/2007): Added support for tokens in the IR (to support threading of the token stream 
   // onto the AST as part of an alternative, and exact, form of code generation within ROSE.
@@ -1111,9 +1124,34 @@ Grammar::setUpNodes ()
                           NO_CONSTRUCTOR_PARAMETER, BUILD_ACCESS_FUNCTIONS, NO_TRAVERSAL, NO_DELETE);
 #endif
 
+//RIKEN
+#if (USE_ACC_IR_NODES == 1)
 
+     // (MEMO: Using enum for a field needs fix in "buildStorageClasses.C").
 
+     AccDirective.setFunctionPrototype(
+       "HEADER_ACC_DIRECTIVE", "../Grammar/Acc.code");
+     AccDirective.setDataPrototype(
+       "enum SgAccDirective::acc_directive", "name", "",
+       CONSTRUCTOR_PARAMETER, BUILD_ACCESS_FUNCTIONS, NO_TRAVERSAL, NO_DELETE);
+     AccDirective.setDataPrototype(
+       "SgAccClauseList", "clauses", "= std::vector<SgAccClause*>()",
+       CONSTRUCTOR_PARAMETER, BUILD_LIST_ACCESS_FUNCTIONS,
+       NO_TRAVERSAL, NO_DELETE);
 
+     AccClause.setFunctionPrototype(
+       "HEADER_ACC_CLAUSE", "../Grammar/Acc.code");
+     AccClause.setDataPrototype(
+       "enum SgAccClause::acc_clause", "name", "",
+       CONSTRUCTOR_PARAMETER, BUILD_ACCESS_FUNCTIONS,
+       NO_TRAVERSAL, NO_DELETE);
+     AccClause.setDataPrototype(
+       "SgExpressionPtrList", "exprs", "= std::vector<SgExpression*>()",
+       CONSTRUCTOR_PARAMETER, BUILD_LIST_ACCESS_FUNCTIONS,
+       NO_TRAVERSAL, NO_DELETE);
+
+#endif //(USE_ACC_IR_NODES == 1)
+//RIKEN
    } // end
 
 

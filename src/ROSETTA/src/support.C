@@ -943,6 +943,18 @@ Grammar::setUpSupport ()
   // Lowering OpenMP directives to code with explicit runtime calls
      File.setDataPrototype         ( "bool", "openmp_lowering", "= false",
                                      NO_CONSTRUCTOR_PARAMETER, BUILD_FLAG_ACCESS_FUNCTIONS, NO_TRAVERSAL, NO_DELETE);
+//RIKEN
+#if (USE_ACC_IR_NODES == 1)
+     File.setDataPrototype(
+       "bool", "acc", "= false",
+       NO_CONSTRUCTOR_PARAMETER, BUILD_FLAG_ACCESS_FUNCTIONS,
+       NO_TRAVERSAL, NO_DELETE);
+     File.setDataPrototype(
+       "bool", "acc_ast_only", "= false",
+       NO_CONSTRUCTOR_PARAMETER, BUILD_FLAG_ACCESS_FUNCTIONS,
+       NO_TRAVERSAL, NO_DELETE);
+#endif //(USE_ACC_IR_NODES == 1)
+//RIKEN
      File.setDataPrototype         ( "bool", "cray_pointer_support", "= false",
                                      NO_CONSTRUCTOR_PARAMETER, BUILD_FLAG_ACCESS_FUNCTIONS, NO_TRAVERSAL, NO_DELETE);
 

@@ -451,6 +451,14 @@ class Unparse_ExprStmt : public UnparseLanguageIndependentConstructs
 
          virtual void unparseOmpForStatement          (SgStatement* stmt, SgUnparse_Info& info);
          virtual void unparseOmpBeginDirectiveClauses (SgStatement* stmt, SgUnparse_Info& info);
+
+//RIKEN
+//#if (USE_ACC_IR_NODES == 1)
+     virtual void unparseAccPrefix(SgAccDirective*, SgUnparse_Info&);
+     virtual void unparseAccReduceOp(SgExpression*, SgUnparse_Info&);
+//#endif
+//RIKEN
+
        // DQ (8/13/2007): This should go into the Unparser class
       //! begin the unparser (unparser.C)
        // void run_unparser();

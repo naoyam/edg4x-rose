@@ -336,6 +336,15 @@ class UnparseLanguageIndependentConstructs
           virtual void unparseOmpBeginDirectiveClauses      (SgStatement* stmt,     SgUnparse_Info& info); 
           virtual void unparseOmpEndDirectiveClauses        (SgStatement* stmt,     SgUnparse_Info& info); 
           virtual void unparseOmpGenericStatement           (SgStatement* stmt,     SgUnparse_Info& info);
+
+//RIKEN
+//#if (USE_ACC_IR_NODES == 1)
+     virtual void unparseAccBlock(SgStatement*, SgUnparse_Info&);
+     virtual void unparseAccPrefix(SgAccDirective*, SgUnparse_Info&);
+     virtual void unparseAccReduceOp(SgExpression*, SgUnparse_Info&);
+//#endif
+//RIKEN
+
 #if 0
        // DQ (7/21/2006): Added support for GNU statement expression extension.
           virtual void unparseStatementExpression (SgExpression* expr, SgUnparse_Info& info);

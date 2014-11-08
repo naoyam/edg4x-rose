@@ -67,7 +67,9 @@ GRAMMAR_SOURCE_FILES = \
 # DQ (4/6/2006): Removed from Jochen's new version
 # ../Grammar/grammarConstructorOfStorageClass.macro
 
-
+#RIKEN
+GRAMMAR_SOURCE_FILES += ../Grammar/Acc.code
+#RIKEN
 
 # VALGRIND_OPTIONS = -v --num-callers=12 --leak-check=yes --error-limit=no --show-reachable=yes
 VALGRIND_OPTIONS = --tool=memcheck -v --num-callers=30 --leak-check=no --error-limit=no --show-reachable=yes --trace-children=yes --suppressions=$(top_srcdir)/scripts/rose-suppressions-for-valgrind

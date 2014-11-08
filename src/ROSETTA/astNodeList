@@ -782,3 +782,6 @@ SgJavaQualifiedType
 SgClassExp
 SgJavaUnionType
 SgJavaParameterType
+SgAccBlock
+SgAccDirective
+SgAccClause

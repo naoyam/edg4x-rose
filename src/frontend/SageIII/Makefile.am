@@ -39,7 +39,7 @@ ROSE_OPTIMIZATION_LEVEL =
 # Liao, 3/31/2009, moved the OpenMP parser here
 #Liao, 10/27/2008. I decide to parse OpenMP pragma string here
 # Bison flags
-AM_YFLAGS = -d
+AM_YFLAGS = -d -r all
 # Flex flags
 AM_LFLAGS =
 # avoid unused Flex functions which are automatically generated
@@ -57,6 +57,13 @@ endif
 omplexer.lo: ompparser.h omplexer.cc
 ompparser.h: ompparser.cc
 	if test -f ompparser.hh; then $(LN_S) -f ompparser.hh ompparser.h; fi;
+
+#RIKEN
+accCLexer.lo: accCParser.h accCLexer.cc
+accCParser.h: accCParser.cc
+accFLexer.lo: accFParser.h accFLexer.cc
+accFParser.h: accFParser.cc
+#RIKEN
 
 # Force sage.docs to be make by default 
 # (if sage.docs.in is modified)
@@ -94,9 +101,18 @@ EXTRA_DIST = CMakeLists.txt preproc-c.ll docs rtiHelpers.h attributeListMap.h \
              advanced_preprocessing_hooks.h rose_attributes_list.h dwarfSupport.h \
              omplexer.cc ompparser.cc ompparser.h sage3basic.hhh fileoffsetbits.h rosedll.h \
 	     ompAstConstruction.h PolicyControl.txt Utf8.h
+#RIKEN
+EXTRA_DIST += accCLexer.cc accCParser.cc accCParser.h
+EXTRA_DIST += accFLexer.cc accFParser.cc accFParser.h
+#RIKEN
+
 CLEANFILES = haveRosettaGeneratedSource
 
 DISTCLEANFILES = preproc-c.cc ompparser.cc ompparser.h omplexer.cc
+#RIKEN
+DISTCLEANFILES += accCLexer.cc accCParser.cc accCParser.h
+DISTCLEANFILES += accFLexer.cc accFParser.cc accFParser.h
+#RIKEN
 
 # Some source code is generated (call make in ROSE/src/ROSETTA/src to generate these files)
 if ROSE_USE_INTERNAL_FRONTEND_DEVELOPMENT
@@ -188,6 +204,9 @@ libsage3Sources = \
    dwarfSupport.C \
    rose_graph_support.C \
    $(fSageSupport_la_sources)
+#RIKEN
+libsage3Sources += accDirectives.cpp
+#RIKEN
 endif
 
 # DQ (2/15/2010): This fails in Hudson tests of ROSE compiling ROSE for code generation, but I can't 
@@ -218,6 +237,9 @@ if ROSE_USE_INTERNAL_FRONTEND_DEVELOPMENT
 libsage3_la_SOURCES = $(libsage3Sources) preproc-c.ll
 else
 libsage3_la_SOURCES = $(libsage3Sources) preproc-c.ll omplexer.ll ompparser.yy
+#RIKEN
+libsage3_la_SOURCES += accCLexer.ll accCParser.yy accFLexer.ll accFParser.yy
+#RIKEN
 endif
 
 # DQ (3/8/2009): I think that the dependence upon $(top_builddir)/rose_config.h 
@@ -309,6 +331,9 @@ pkginclude_HEADERS = \
    OmpAttribute.h omp.h dwarfSupport.h \
    omp_lib_kinds.h omp_lib.h sage3basic.hhh rosedefs.h  fileoffsetbits.h rosedll.h \
    $(fSageSupport_includeHeaders)
+#RIKEN
+pkginclude_HEADERS += accDirectives.h
+#RIKEN
 
 # DQ (4/5/2009): Moved rose_paths.h to src/util (where the source file is located).
 nodist_pkginclude_HEADERS = \
@@ -324,6 +349,11 @@ BUILT_SOURCES = $(GENERATED_SOURCE)
 else
 BUILT_SOURCES = $(GENERATED_SOURCE) ompparser.cc ompparser.h omplexer.cc
 endif
+
+#RIKEN
+BUILT_SOURCES += accCLexer.cc accCParser.cc accCParser.h
+BUILT_SOURCES += accFLexer.cc accFParser.cc accFParser.h
+#RIKEN
 
 # DQ (9/9/2007): Put C++_include_files.h back into place
 # since it is a convinient mechanism to handle included headers 

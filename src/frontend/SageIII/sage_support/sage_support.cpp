@@ -28,6 +28,12 @@
 #include <boost/filesystem.hpp>
 #include <boost/foreach.hpp>
 
+//RIKEN
+//#if (USE_ACC_IR_NODES == 1)
+#include "accDirectives.h"
+//#endif
+//RIKEN
+
 #ifdef __INSURE__
 // Provide a dummy function definition to support linking with Insure++.
 // We have not identified why this is required.  This fixes the problem of
@@ -2652,10 +2658,39 @@ SgFile::secondaryPassOverSourceFile()
                attachPreprocessingInfo(sourceFile);
 #endif
 
+//RIKEN
 #ifndef ROSE_USE_INTERNAL_FRONTEND_DEVELOPMENT
+//#if (USE_ACC_IR_NODES == 1)
+
+               // (ACC directive recognition should be placed before
+               // OMP processing, because it drops nearby comments).
+
+               bool langf = sourceFile->get_Fortran_only();
+               if (langf) {
+                 AccSupport::accTakeoutDirectives(sourceFile);
+               }
+//#endif
+#endif
+//RIKEN
+
             // Liao, 3/31/2009 Handle OpenMP here to see macro calls within directives
                processOpenMP(sourceFile);
+
+//RIKEN
+#ifndef ROSE_USE_INTERNAL_FRONTEND_DEVELOPMENT
+//#if (USE_ACC_IR_NODES == 1)
+
+               // (ACC parsing should be placed after OMP, to make a
+               // block for the body including non-ACC constructs.
+               // ACC parser may have difficulity in handling non-ACC
+               // directives, when it makes a block, it should
+               // recognize the end markers of non-ACC directives).
+
+               AccSupport::accParseDirectives(sourceFile);
+//#endif
 #endif
+//RIKEN
+
                // Liao, 1/29/2014, handle failsafe pragmas for resilience work
                if (sourceFile->get_failsafe())
                  FailSafe::process_fail_safe_directives (sourceFile); 

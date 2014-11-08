@@ -5,6 +5,12 @@
 
 #include "OmpAttribute.h" // to support unparsing OpenMP constructs
 
+//RIKEN
+//#if (USE_ACC_IR_NODES == 1)
+#include "accDirectives.h"
+//#endif
+//RIKEN
+
 // DQ (10/29/2013): Adding support for unparsing from the token stream.
 #include "tokenStreamMapping.h"
 
@@ -1371,6 +1377,14 @@ UnparseLanguageIndependentConstructs::unparseStatement(SgStatement* stmt, SgUnpa
                     case V_SgOmpSimdStatement:
                          unparseOmpGenericStatement (stmt, info); 
                          break;
+
+//RIKEN
+//#if (USE_ACC_IR_NODES == 1)
+                  case V_SgAccBlock:
+                    unparseAccBlock(stmt, info);
+                    break;
+//#endif
+//RIKEN
 
                     default:
                       // DQ (11/4/2008): This is a bug for the case of a SgFortranDo statement, unclear what to do about this.

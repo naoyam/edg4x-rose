@@ -424,6 +424,13 @@ class FortranCodeGeneration_locatedNode : public UnparseLanguageIndependentConst
           virtual void unparseOmpEndDirectiveClauses       (SgStatement* stmt,     SgUnparse_Info& info);
           virtual void unparseOmpEndDirectivePrefixAndName (SgStatement* stmt, SgUnparse_Info& info);
 
+//RIKEN
+//#if (USE_ACC_IR_NODES == 1)
+     virtual void unparseAccPrefix(SgAccDirective*, SgUnparse_Info&);
+     virtual void unparseAccReduceOp(SgExpression*, SgUnparse_Info&);
+//#endif
+//RIKEN
+
          /**
           * override to make unary plus/minus expressions have the same precedence as binary plus;
           * everything else remains the same.

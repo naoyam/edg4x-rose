@@ -5,16 +5,16 @@ unparseLanguageIndependenceSupport_la_sources=\
 	$(languageIndependenceSupportPath)/unparser_opt.C \
 	$(languageIndependenceSupportPath)/modified_sage.C \
 	$(languageIndependenceSupportPath)/unparse_debug.C \
-	$(languageIndependenceSupportPath)/modified_sage_isUnaryOp.C 
-
+	$(languageIndependenceSupportPath)/modified_sage_isUnaryOp.C \
+	$(languageIndependenceSupportPath)/accUnparse.cpp
 
 unparseLanguageIndependenceSupport_includeHeaders=\
 	$(languageIndependenceSupportPath)/unparseLanguageIndependentConstructs.h \
 	$(languageIndependenceSupportPath)/name_qualification_support.h \
 	$(languageIndependenceSupportPath)/unparser_opt.h \
 	$(languageIndependenceSupportPath)/modified_sage.h \
-	$(languageIndependenceSupportPath)/unparse_debug.h
-
+	$(languageIndependenceSupportPath)/unparse_debug.h \
+	$(languageIndependenceSupportPath)/accUnparse.h
 
 unparseLanguageIndependenceSupport_extraDist=\
 	$(languageIndependenceSupportPath)/CMakeLists.txt

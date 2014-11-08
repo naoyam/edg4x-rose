@@ -614,6 +614,10 @@ typedef SgOmpClausePtrList*                SgOmpClausePtrListPtr;
 typedef Rose_STL_Container<SgOmpSectionStatement*>   SgOmpSectionStatementPtrList;
 typedef SgOmpSectionStatementPtrList*                SgOmpSectionStatementPtrListPtr;
 
+//RIKEN
+typedef Rose_STL_Container<SgAccClause*> SgAccClauseList;
+//RIKEN
+
 // DQ (1/13/2014): Added support for Java annotations.
 typedef Rose_STL_Container<SgJavaMemberValuePair*> SgJavaMemberValuePairPtrList;
 typedef SgJavaMemberValuePairPtrList* SgJavaMemberValuePairPtrListPtr;

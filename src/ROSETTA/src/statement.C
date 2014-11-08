@@ -470,6 +470,12 @@ Grammar::setUpStatements ()
   // + variable list
      NEW_TERMINAL_MACRO (OmpThreadprivateStatement, "OmpThreadprivateStatement",    "OMP_THREADPRIVATE_STMT" );
 
+//RIKEN
+#if (USE_ACC_IR_NODES == 1)
+     NEW_TERMINAL_MACRO(AccBlock, "AccBlock", "ACC_BLOCK_TYPETAG");
+#endif
+//RIKEN
+
   // DQ (8/16/2014): Adding support for Microsoft attributes (e.g. "[repeatable] int x;")
      NEW_TERMINAL_MACRO (MicrosoftAttributeDeclaration, "MicrosoftAttributeDeclaration", "MS_ATTRIBUTE_DECL_STMT"    );
 
@@ -503,6 +509,11 @@ Grammar::setUpStatements ()
           /* FortranDo                 | */ AllocateStatement   | DeallocateStatement             | UpcNotifyStatement    | 
              UpcWaitStatement          | UpcBarrierStatement    | UpcFenceStatement               | 
              OmpBarrierStatement       | OmpTaskwaitStatement   |  OmpFlushStatement              | OmpBodyStatement      |
+//RIKEN
+#if (USE_ACC_IR_NODES == 1)
+                            AccBlock |
+#endif
+//RIKEN
              SequenceStatement         | WithStatement          | PythonPrintStmt                 | PassStatement         |
              AssertStmt                | ExecStatement          | PythonGlobalStmt                | JavaThrowStatement    |
              JavaSynchronizedStatement /* | JavaPackageDeclaration */,
@@ -3904,6 +3915,29 @@ Grammar::setUpStatements ()
 
 //    OmpClauseBodyStatement.setAutomaticGenerationOfDestructor(false);
 #endif
+
+//RIKEN
+#if (USE_ACC_IR_NODES == 1)
+
+    AccBlock.setFunctionPrototype(
+      "HEADER_ACC_BLOCK", "../Grammar/Acc.code");
+    AccBlock.setFunctionSource(
+      "SOURCE_ACC_BLOCK", "../Grammar/Acc.code");
+    AccBlock.setDataPrototype(
+      "SgAccDirective*", "directive", "",
+      CONSTRUCTOR_PARAMETER, BUILD_ACCESS_FUNCTIONS,
+      NO_TRAVERSAL, NO_DELETE);
+    AccBlock.setDataPrototype(
+      "SgBasicBlock*", "body", "",
+      CONSTRUCTOR_PARAMETER, BUILD_ACCESS_FUNCTIONS,
+      DEF_TRAVERSAL, NO_DELETE);
+    AccBlock.setDataPrototype(
+      "SgAccBlock*", "closing", "",
+      NO_CONSTRUCTOR_PARAMETER, BUILD_ACCESS_FUNCTIONS,
+      NO_TRAVERSAL, NO_DELETE);
+
+#endif //(USE_ACC_IR_NODES == 1)
+//RIKEN
 
      MicrosoftAttributeDeclaration.setFunctionSource ( "SOURCE_MICROSOFT_ATTRIBUTE_DECLARATION_STATEMENT", "../Grammar/Statement.code" );
 

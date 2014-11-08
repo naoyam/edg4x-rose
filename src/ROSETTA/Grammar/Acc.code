@@ -1,0 +1,169 @@
+/* Acc.code -*-Mode: C++;-*- */
+/* Copyright (C) 2014 RIKEN AICS (of modifications) */
+
+// Code for ACC.  The codes here may better be stored in
+// "Statement.code".
+
+HEADER_ACC_DIRECTIVE_START
+    public:
+
+    enum acc_directive
+    {
+      //e_acc_bad = 0,
+
+      // Directives (2.5)
+
+      e_acc_parallel,
+      e_acc_kernels,
+      e_acc_data,
+      e_acc_enter_data,
+      e_acc_exit_data,
+      e_acc_host_data,
+
+      // Constructs (2.6.6, 2.7)
+
+      e_acc_loop,
+      e_acc_parallel_loop,
+      e_acc_kernels_loop,
+      e_acc_cache,
+
+      e_acc_atomic_update,
+      e_acc_atomic_read,
+      e_acc_atomic_write,
+      e_acc_atomic_capture,
+
+      e_acc_declare,
+
+      // Executable Directives (2.12)
+
+      e_acc_update,
+      e_acc_routine,
+      e_acc_wait,
+
+      // Fortran Block End (omitting the optional ones)
+
+      e_acc_end_parallel,
+      e_acc_end_kernels,
+      e_acc_end_data,
+      e_acc_end_host_data,
+      e_acc_end_atomic
+      /*e_acc_end_parallel_loop*/
+      /*e_acc_end_kernels_loop*/
+      /*e_acc_end_atomic_update*/
+      /*e_acc_end_atomic_read*/
+      /*e_acc_end_atomic_write*/
+    };
+HEADER_ACC_DIRECTIVE_END
+
+HEADER_ACC_CLAUSE_START
+    public:
+
+    enum acc_clause
+    {
+      //e_acc_c_bad = 0,
+
+      // Clauses
+
+      /* (dtype for device_type) */
+
+      e_acc_c_dtype,
+
+      e_acc_c_if,
+      e_acc_c_async,
+      e_acc_c_wait,
+      e_acc_c_num_gangs,
+      e_acc_c_num_workers,
+      e_acc_c_vector_length,
+      e_acc_c_private,
+      e_acc_c_firstprivate,
+      e_acc_c_reduction,
+      e_acc_c_default_none,
+
+      // Data Clauses (2.6.5)
+
+      e_acc_c_deviceptr,
+      e_acc_c_copy,
+      e_acc_c_copyin,
+      e_acc_c_copyout,
+      e_acc_c_create,
+      e_acc_c_delete,
+      e_acc_c_present,
+      e_acc_c_pcopy,
+      e_acc_c_pcopyin,
+      e_acc_c_pcopyout,
+      e_acc_c_pcreate,
+
+      // Host_Data Clauses
+
+      e_acc_c_use_device,
+
+      // Loop Clauses
+
+      e_acc_c_collapse,
+      e_acc_c_gang,
+      e_acc_c_worker,
+      e_acc_c_vector,
+      e_acc_c_seq,
+      e_acc_c_auto,
+      e_acc_c_tile,
+      e_acc_c_independent,
+
+      e_acc_c_device_resident,
+      e_acc_c_link,
+
+      e_acc_c_self,
+      e_acc_c_host,
+      e_acc_c_device,
+
+      e_acc_c_bind,
+      e_acc_c_nohost,
+
+      // Additions for Internal Use
+
+      e_acc_c_cache_arguments,
+      e_acc_c_routine_name,
+      e_acc_c_wait_arguments
+    };
+HEADER_ACC_CLAUSE_END
+
+HEADER_ACC_BLOCK_START
+    protected:
+    virtual bool replace_child(SgStatement*, SgStatement*,
+                               bool extractListFromBasicBlock = false);
+    virtual bool insert_child(SgStatement*, SgStatement*,
+                              bool inFront = true,
+                              bool extractListFromBasicBlock = false);
+
+#ifndef ROSE_USE_INTERNAL_FRONTEND_DEVELOPMENT
+    public:
+    virtual unsigned int cfgIndexForEnd() const;
+    virtual std::vector<VirtualCFG::CFGEdge> cfgOutEdges(unsigned int index);
+    virtual std::vector<VirtualCFG::CFGEdge> cfgInEdges(unsigned int index);
+#endif
+HEADER_ACC_BLOCK_END
+
+SOURCE_ACC_BLOCK_START
+
+    // Does it on a body (statement block).  It cannot directly call
+    // replace_child() as it is protected.  It ignores an option.
+
+    bool
+    SgAccBlock::replace_child(SgStatement* target, SgStatement* newstmt,
+                              bool extractListFromBasicBlock) {
+      /*return p_body->replace_child(target, newstmt, extract);*/
+      p_body->replace_statement(target, newstmt);
+      return true;
+    }
+
+    // Does it on a body (statement block).  It cannot directly call
+    // replace_child() as it is protected.  It ignores an option.
+
+    bool
+    SgAccBlock::insert_child(SgStatement* target, SgStatement* newstmt,
+                             bool inFront, bool extractListFromBasicBlock) {
+      /*return p_body->insert_child(target, newstmt, infront, extract);*/
+      p_body->insert_statement(target, newstmt, inFront);
+      return true;
+    }
+
+SOURCE_ACC_BLOCK_END

@@ -5587,6 +5587,23 @@ SgTypeExpression::cfgInEdges(unsigned int idx)
      return result;
    }
 
+//RIKEN
+//#if (USE_ACC_IR_NODES == 1)
+
+unsigned int SgAccBlock::cfgIndexForEnd() const {
+  assert(0);
+}
+
+std::vector<CFGEdge> SgAccBlock::cfgOutEdges(unsigned int i) {
+  assert(0);
+}
+
+std::vector<CFGEdge> SgAccBlock::cfgInEdges(unsigned int idx) {
+  assert(0);
+}
+
+//#endif //(USE_ACC_IR_NODES == 1)
+//RIKEN
 
 #endif
 

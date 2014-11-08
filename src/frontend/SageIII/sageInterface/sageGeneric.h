@@ -732,6 +732,18 @@ namespace sg
         Dispatcher::dispatch(rv, assume_sage_type<SgOmpBodyStatement>(*n));
         break;
 
+//RIKEN
+//#if (USE_ACC_IR_NODES == 1)
+      case V_SgAccDirective:
+        Dispatcher::dispatch(rv, assume_sage_type<SgAccDirective>(*n));
+        break;
+
+      case V_SgAccClause:
+        Dispatcher::dispatch(rv, assume_sage_type<SgAccClause>(*n));
+        break;
+//#endif
+//RIKEN
+
       case V_SgBlockDataStatement:
         Dispatcher::dispatch(rv, assume_sage_type<SgBlockDataStatement>(*n));
         break;

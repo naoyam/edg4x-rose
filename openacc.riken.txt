@@ -1,0 +1,170 @@
+-*- Mode: Fundamental; Coding: us-ascii; -*-
+
+*** (2014-10-31) NOTES ON ACC PARSING
+
+* CHANGES
+
+Fixes are minimal for ACC parsing and unparsing (no semantic actions).
+The parser uses FLEX and BISON.
+
+[NODES]
+
+One statement node "SgAccBlock" is added to represent an ACC block,
+which holds a directive line and an optional statement block
+("SgBasicBlock").  A statement block can be null when a directive has
+no target statements.
+
+A directive line is of type "SgAccDirective", which holds a type of a
+directive ("name") and a vector of clauses ("clauses").  A directive
+name is an enumerator "SgAccDirective::acc_directive".
+
+A clause is of type "SgAccClause", which holds a type of a clause
+("name") and a vector of expressions of SgExpression ("exprs").  A
+clause name is an enumerator "SgAccClause::acc_clause".  A clause
+always takes expressions as a vector, even if it takes a single
+argument.
+
+In summary:
+
+	SgAccBlock {
+		SgAccDirecitve directive
+		SgBasicBlock body (optional)}
+
+	SgAccDirecitve {
+		enum SgAccDirective::acc_directive name
+		vector<SgAccClause> clauses}
+
+	SgAccClause {
+		enum SgAccClause::acc_clause name
+		vector<SgExpression> exprs}
+
+[REPRESENTATION]
+
+A few directives/clauses take special representation.
+
+A GANG clause is represented as a length-of-two list of expressions,
+the first one is for NUM, and the second one is for STATIC, and either
+can be null.
+
+Directly specified arguments to CACHE, ROUTINE, and WAIT directives
+are represented by a specific clauses as e_acc_c_cache_arguments,
+e_acc_c_routine_name, and e_acc_c_wait_arguments respectively.  They
+always come before other clauses if they exist.
+
+Operators of a REDUCTION clause are represented by strings of their
+names.
+
+[ROUTINES]
+
+Two main routines listed below are called from
+"SgFile::secondaryPassOverSourceFile()" to process ACC directives.
+
+	- void accTakeoutDirectives(SgSourceFile *file)
+	- void accParseDirectives(SgSourceFile *file)
+
+"accTakeoutDirectives()" extracts directives from comments and adds
+PRAGMA nodes, which is only for Fortran.  "accParseDirectives()"
+parses a directive line and replaces statements by "SgAccBlock" nodes.
+
+Directive processing is inserted in "sage_support.cpp".
+
+[RESTRICTIONS]
+
+See comments in "accDirectives.cpp", "accFParser.yy", and
+"accCParser.yy" for restrictions.
+
+* FIXED FILES
+
+[BASE]
+
+It bases on the commit = 9a2fc67ecd7f99553341160087129da3fe049222
+
+[NOT FIXED]
+
+CMakelist.txt files are not fixed.
+
+[ADDED FILES in "src/ROSETTA/Grammar"]
+
+	- Acc.code: Node definitions.
+
+These definitions should be in "Statement.code" and "Support.code",
+but in a separate file.
+
+[ADDED FILES in "src/backend/unparser/languageIndependenceSupport"]
+
+	- accUnparse.cpp: Unparser (C and Fortran).
+	- accUnparse.h
+
+[ADDED FILES in "src/frontend/SageIII"]
+
+	- accDirectives.cpp: Directive processing
+	- accDirectives.h
+	- accCLexer.ll: Lexer (C)
+	- accCParser.yy: Parser-rules (C)
+	- accFLexer.ll: Lexer (Fortran)
+	- accFParser.yy: Parser-rules (Fortran)
+
+[ADDED FILES in "tests/CompileTests/Acc_tests"]
+
+	- simplef.f90
+	- simplec.c
+
+[MODIFIED FILES in "src/ROSETTA"]
+
+	- Grammar/Node.code
+	- Grammar/Support.code
+	- astNodeList
+	- src/grammar.C
+	- src/grammar.h
+	- src/node.C
+	- src/statement.C
+	- src/support.C
+	- src/buildStorageClasses.C
+
+"buildStorageClasses.C" is changed to let recognize "enum" as
+enumerator in class file generation.
+
+[MODIFIED FILES in "src/backend/unparser"]
+
+	- CxxCodeGeneration/unparseCxx.h
+	- FortranCodeGeneration/unparseFortran.h
+
+[MODIFIED FILES in "src/backend/unparser/languageIndependenceSupport"]
+
+	- unparseLanguageIndependentConstructs.h
+	- unparseLanguageIndependentConstructs.C
+
+[MODIFIED FILES in "src/frontend/SageIII"]
+
+	- sageInterface/sageGeneric.h
+	- sage_support/cmdline.cpp
+	- sage_support/sage_support.cpp
+	- virtualCFG/memberFunctions.C
+
+*** (2014-10-31) STYLES
+
+* EDITING STYLES
+
+It seems there is no common indentation style, so a likely-be majority
+was chosen, but not consistently used.  File names follow "16.6 Naming
+Conventions" in the Wikibook.
+
+- Calls as "f()" not "f_()" (without a blank)
+- Comments started by "//"
+
+* EMACS SETTING
+
+(setq-default indent-tabs-mode nil)
+(c-set-style "linux")
+        (setq c-basic-offset 2)
+        (c-set-offset 'substatement-open '+)
+
+* GDB SETTING
+
+The setting below will help printing objects look nice.  The first
+lets print objects by their classes from vtables.  The second lets not
+print static fields.  (It may be often necessary to remove "-O2" from
+configure).
+
+	(gdb) set print object on
+	(gdb) set print static-members off

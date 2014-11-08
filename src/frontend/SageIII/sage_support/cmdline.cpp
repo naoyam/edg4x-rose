@@ -2953,6 +2953,14 @@ SgFile::usage ( int status )
 "     -rose:OpenMP:lowering, -rose:openmp:lowering\n"
 "                             on top of -rose:openmp:ast_only, transform AST with OpenMP nodes into multithreaded code \n"
 "                             targeting GCC GOMP runtime library\n"
+//RIKEN
+//#if (USE_ACC_IR_NODES == 1)
+"     -rose:acc\n"
+"                             enable OpenACC directive processing\n"
+"     -rose:acc:ast_only\n"
+"                             build ACC AST nodes\n"
+//#endif //(USE_ACC_IR_NODES == 1)
+//RIKEN
 "     -rose:UPC_only, -rose:UPC\n"
 "                             follow Unified Parallel C 1.2 specification\n"
 "     -rose:UPCxx_only, -rose:UPCxx\n"
@@ -4279,6 +4287,33 @@ SgFile::processRoseCommandLineOptions ( vector<string> & argv )
        // argv.push_back("-D_FAILSAFE");
      }
 
+//RIKEN
+//#if (USE_ACC_IR_NODES == 1)
+
+     if (CommandlineProcessing::isOption(argv, "-rose:", "acc", true)
+         || CommandlineProcessing::isOption(argv, "-rose:", "ACC", true)) {
+       if (SgProject::get_verbose() >= 1) {
+         printf("ACC options specified \n");
+       }
+       set_acc(true);
+     }
+
+     if (CommandlineProcessing::isOption(argv, "-rose:acc:", "ast_only", true)
+         || CommandlineProcessing::isOption(argv, "-rose:ACC:", "ast_only", true)) {
+       if (SgProject::get_verbose() >= 1) {
+         printf ("ACC AST construction specified \n");
+       }
+       set_acc_ast_only(true);
+       set_acc(true);
+     }
+
+     if (get_acc()) {
+       argv.push_back("-D_OPENACC=201306");
+     }
+
+//#endif //(USE_ACC_IR_NODES == 1)
+//RIKEN
+
   //
   // strict ANSI/ISO mode option
   //
@@ -4904,6 +4939,12 @@ SgFile::stripRoseCommandLineOptions ( vector<string> & argv )
      optionCount = sla(argv, "-rose:", "($)", "(openmp:parse_only|OpenMP:parse_only)",1);
      optionCount = sla(argv, "-rose:", "($)", "(openmp:ast_only|OpenMP:ast_only)",1);
      optionCount = sla(argv, "-rose:", "($)", "(openmp:lowering|OpenMP:lowering)",1);
+//RIKEN
+//#if (USE_ACC_IR_NODES == 1)
+     optionCount = sla(argv, "-rose:", "($)", "(ACC|acc)", 1);
+     optionCount = sla(argv, "-rose:", "($)", "(ACC:ast_only|acc:ast_only)",1);
+//#endif //(USE_ACC_IR_NODES == 1)
+//RIKEN
      optionCount = sla(argv, "-rose:", "($)", "(C89|C89_only)",1);
      optionCount = sla(argv, "-rose:", "($)", "(C99|C99_only)",1);
      optionCount = sla(argv, "-rose:", "($)", "(Cxx|Cxx_only)",1);
