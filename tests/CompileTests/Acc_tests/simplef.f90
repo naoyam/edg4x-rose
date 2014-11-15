@@ -36,11 +36,12 @@ subroutine f1(n, a, b, c)
   integer :: i, j, k
   real :: t
   !$ACC DATA COPYIN(A,B) COPY(C)
-  !$ACC KERNELS
   do j=1,n
+     !$ACC KERNELS COPYIN(A(1:N,J)) ASYNC(J)
      do i=1,n
         c(i,j) = 0.0
      end do
+     !$ACC END KERNELS
   end do
   do j=1,n
      do i=1,n
@@ -51,7 +52,6 @@ subroutine f1(n, a, b, c)
         c(i,j) = t
      end do
   end do
-  !$ACC END KERNELS
   !$ACC END DATA
 end subroutine f1
 
@@ -166,6 +166,7 @@ subroutine f8(n, a, b)
   integer, intent(in) :: n
   real, intent(inout) :: a(:), b(:)
   integer i
+  !$ACC ROUTINE (bar) BIND("foo")
   !$ACC ROUTINE BIND(foo)
   !$ACC KERNELS LOOP
   !$omp parallel do
@@ -228,8 +229,136 @@ subroutine f10(n, a, b)
   end do
 end subroutine f10
 
+! (Block to end marker.  Block includes comments at before the end.)
+
+subroutine f11(n, a, b)
+  implicit none
+  integer, intent(in) :: n
+  real, intent(inout) :: a(:), b(:)
+  integer i, j
+  do j = 1, n
+     !$ACC KERNELS
+     do i = 1, n
+        b(i) = a(i) * 2.0
+     end do
+     !$ACC END KERNELS
+  end do
+
+  do j = 1, n
+     !$ACC WAIT(0)
+  end do
+end subroutine f11
+
+! (Miss end marker at before ELSE and END-IF.)
+
+subroutine f12(n, a, b)
+  implicit none
+  integer, intent(in) :: n
+  real, intent(inout) :: a(:), b(:)
+  integer i
+  if (n == 10) then
+     !$ACC KERNELS
+     do i = 1, n
+        b(i) = a(i) * 2.0
+     end do
+     !$ACC END KERNELS
+  else if (n == 20) then
+     !$ACC KERNELS
+     do i = 1, n
+        b(i) = a(i) * 2.0
+     end do
+     !$ACC END KERNELS
+  else
+     !$ACC KERNELS
+     do i = 1, n
+        b(i) = a(i) * 2.0
+     end do
+     !$ACC END KERNELS
+  end if
+
+  if (n == 10) then
+     !$ACC WAIT(0)
+  else if (n == 20) then
+     !$ACC WAIT(0)
+  else
+     !$ACC WAIT(0)
+  end if
+end subroutine f12
+
+! (Miss end marker at before CASE and END-SELECT.)
+
+subroutine f13(n, a, b)
+  implicit none
+  integer, intent(in) :: n
+  real, intent(inout) :: a(:), b(:)
+  integer i
+  select case (n)
+  case (30)
+     !$ACC KERNELS
+     do i = 1, n
+        b(i) = a(i) * 2.0
+     end do
+     !$ACC END KERNELS
+  case default
+     !$ACC KERNELS
+     do i = 1, n
+        b(i) = a(i) * 2.0
+     end do
+     !$ACC END KERNELS
+  end select
+
+  select case (n)
+  case (30)
+     !$ACC WAIT(0)
+  case default
+     !$ACC WAIT(0)
+  end select
+end subroutine f13
+
+! (Block to end marker.)
+
+!! subroutine f12(n, a, b)
+!! implicit none
+!! integer, intent(in) :: n
+!! real, intent(inout) :: a(:), b(:)
+!! integer i, j
+!! associate (x => i)
+!! !-$ACC KERNELS
+!! do i = 1, n
+!! b(i) = a(x) * 2.0
+!! end do
+!! !-$ACC END KERNELS
+!! end associate
+!! end subroutine f12
+
+! (Block to end marker.)
+
+!! subroutine f12(n, a, b)
+!! implicit none
+!! integer, intent(in) :: n
+!! real, intent(inout) :: a(1:n), b(1:n)
+!! integer i, j
+!! forall (j = 1:n)
+!! !-$ACC KERNELS
+!! b(j) = a(j) * 2.0
+!! !-$ACC END KERNELS
+!! end forall
+!! where (a > 20.0)
+!! !-$ACC KERNELS
+!! b = a * 2.0
+!! !-$ACC END KERNELS
+!! else where (a > 10.0)
+!! !-$ACC KERNELS
+!! b = a * 2.0
+!! !-$ACC END KERNELS
+!! else where
+!! !-$ACC KERNELS
+!! b = a * 2.0
+!! !-$ACC END KERNELS
+!! end where
+!! end subroutine f12
+
 program main
   implicit none
-  !$ACC ROUTINE (bar) BIND("foo")
   stop
 end program main

@@ -55,6 +55,9 @@ using namespace AccSupport;
 #define acc_x_current acc_c_current
 #define acc_x_scope acc_c_scope
 #define acc_x_set_location acc_c_set_location
+#define acc_x_scan_string acc_c_scan_string
+#define acc_x_parse_real acc_c_parse_real
+#define acc_x_parse_integer acc_c_parse_integer
 
 extern int acc_c_lex();
 static int acc_c_error(const char*);
@@ -69,9 +72,9 @@ static SgScopeStatement* acc_x_scope;
 // {e->set_file_info()} only sets the start.
 
 static void acc_x_set_location(SgExpression *e, Sg_File_Info* location) {
-  e->set_startOfConstruct(location);
-  e->set_endOfConstruct(location);
-  e->set_operatorPosition(location);
+  e->set_startOfConstruct(new Sg_File_Info(*location));
+  e->set_endOfConstruct(new Sg_File_Info(*location));
+  e->set_operatorPosition(new Sg_File_Info(*location));
   /*loc->set_parent(e);*/
 }
 
@@ -80,9 +83,9 @@ static SgAccDirective* acc_x_directive(
   std::vector<SgAccClause*> *cc, Sg_File_Info* location) {
   SgAccDirective* v;
   if (cc == NULL) {
-    v = new SgAccDirective(location, e);
+    v = new SgAccDirective(new Sg_File_Info(*location), e);
   } else {
-    v = new SgAccDirective(location, e, *cc);
+    v = new SgAccDirective(new Sg_File_Info(*location), e, *cc);
     delete cc;
   }
   return v;
@@ -93,9 +96,9 @@ static SgAccClause* acc_x_clause(
   std::vector<SgExpression*> *ee, Sg_File_Info* location) {
   SgAccClause* c;
   if (ee == NULL) {
-    c = new SgAccClause(location, e);
+    c = new SgAccClause(new Sg_File_Info(*location), e);
   } else {
-    c = new SgAccClause(location, e, *ee);
+    c = new SgAccClause(new Sg_File_Info(*location), e, *ee);
     delete ee;
   }
   return c;
@@ -103,7 +106,7 @@ static SgAccClause* acc_x_clause(
 
 // Scans a real value.
 
-static SgExpression* acc_c_parse_real(
+static SgExpression* acc_x_parse_real(
   const char* s0, Sg_File_Info* location) {
   std::string s(s0);
   SgExpression* e;
@@ -116,6 +119,7 @@ static SgExpression* acc_c_parse_real(
     }
     SgDoubleVal* e0 = SageBuilder::buildDoubleVal(v);
     e0->set_valueString(std::string(s0));
+    acc_x_set_location(e0, location);
     e = e0;
   } else {
     float v;
@@ -126,15 +130,15 @@ static SgExpression* acc_c_parse_real(
     }
     SgFloatVal* e0 = SageBuilder::buildFloatVal(v);
     e0->set_valueString(std::string(s0));
+    acc_x_set_location(e0, location);
     e = e0;
   }
-  acc_x_set_location(e, location);
   return e;
 }
 
 // Scans an integer value.  It ignores size.
 
-static SgExpression* acc_c_parse_integer(
+static SgExpression* acc_x_parse_integer(
   const char* s0, Sg_File_Info* location) {
   std::string s(s0);
   long v;
@@ -152,12 +156,13 @@ static SgExpression* acc_c_parse_integer(
 // Scans string literals.  RESTRICTIONS: It leaves escaped characters
 // intact.
 
-static SgExpression* acc_c_scan_string(
+static SgExpression* acc_x_scan_string(
   std::string& s0, Sg_File_Info* location) {
   assert(s0.size() >= 2);
   std::string s1 = s0.substr(1, s0.size() - 2);
   assert(s1.find('\\') == std::string::npos);
   SgExpression* e = new SgStringVal(location, s1);
+  acc_x_set_location(e, location);
   return e;
 }
 
@@ -396,14 +401,22 @@ data_directive
 
 data_clause_seq
         : data_clauses {
-          $$ = new std::vector<SgAccClause*>(1, $1);
+          if ($1 == NULL) {
+            $$ = new std::vector<SgAccClause*>();
+          } else {
+            $$ = new std::vector<SgAccClause*>(1, $1);
+          }
         }
         | data_clause_seq data_clauses {
-          $1->push_back($2);
+          if ($2 != NULL) {
+            $1->push_back($2);
+          }
           $$ = $1;
         }
         | data_clause_seq ',' data_clauses {
-          $1->push_back($3);
+          if ($3 != NULL) {
+            $1->push_back($3);
+          }
           $$ = $1;
         }
         ;
@@ -420,6 +433,15 @@ data_clauses
         | pcopyout_clause
         | pcreate_clause
         | deviceptr_clause
+        | async_clause {
+          /*NONSTANDARD*/
+          std::string loc = accLocationString(acc_x_directive_node);
+          fprintf(stderr, ("ACC: ASYNC is not a clause of DATA directive"
+                           " (ignored) at %s\n"),
+                  loc.c_str());
+          delete ($1);
+          $$ = NULL;
+        }
         ;
 
 enter_data_directive
@@ -897,6 +919,7 @@ reduction_clause
         : REDUCTION '(' reduction_operator ':' var_list ')' {
           SgExpression*
             op = new SgStringVal(acc_x_location, std::string($3));
+          acc_x_set_location(op, acc_x_location);
           std::vector<SgExpression*> *ee = $5;
           ee->insert(ee->begin(), op);
           $$ = acc_x_clause(e_acc_c_reduction, ee, acc_x_location);
@@ -1096,7 +1119,7 @@ bind_clause
         }
         | BIND '(' STRING ')' {
           std::string s0 = $3;
-          SgExpression* s = acc_c_scan_string(s0, acc_x_location);
+          SgExpression* s = acc_x_scan_string(s0, acc_x_location);
           std::vector<SgExpression*>*
             ee = new std::vector<SgExpression*>(1, s);
           delete $3;
@@ -1152,7 +1175,10 @@ size_expr_list
 
 size_expr
         : '*' {
-          $$ = new SgStringVal(acc_x_location, std::string("*"));
+          SgExpression*
+            e = new SgStringVal(acc_x_location, std::string("*"));
+          acc_x_set_location(e, acc_x_location);
+          $$ = e;
         }
         | expr
         ;
@@ -1206,6 +1232,7 @@ dtype_arg
         : '*' {
           SgExpression*
             e = new SgStringVal(acc_x_location, std::string("*"));
+          acc_x_set_location(e, acc_x_location);
           $$ = new std::vector<SgExpression*>(1, e);
         }
         | dtype_list
@@ -1223,7 +1250,10 @@ dtype_list
 
 dtype
         : varid {
-          $$ = new SgStringVal(acc_x_location, std::string($1));
+          SgExpression*
+            e = new SgStringVal(acc_x_location, std::string($1));
+          acc_x_set_location(e, acc_x_location);
+          $$ = e;
         }
         ;
 
@@ -1574,17 +1604,17 @@ primary_expression
         : varref
         | CONSTANTI {
           const char* s = $1;
-          SgExpression* e = acc_c_parse_integer(s, acc_x_location);
+          SgExpression* e = acc_x_parse_integer(s, acc_x_location);
           $$ = e;
         }
-	| CONSTANTR {
+        | CONSTANTR {
           const char* s = $1;
-          SgExpression* e = acc_c_parse_real(s, acc_x_location);
+          SgExpression* e = acc_x_parse_real(s, acc_x_location);
           $$ = e;
         }
         | STRING {
           std::string s0 = $1;
-          SgExpression* s = acc_c_scan_string(s0, acc_x_location);
+          SgExpression* s = acc_x_scan_string(s0, acc_x_location);
           delete $1;
           $$ = s;
         }
@@ -1620,9 +1650,9 @@ subsections
           for (std::vector<SgExpression*>::iterator
                  i = ax->begin(); i != ax->end(); i++) {
             SgPntrArrRefExp* e1 = new SgPntrArrRefExp(e, (*i), NULL);
+            acc_x_set_location(e1, acc_x_location);
             e->set_parent(e1);
             (*i)->set_parent(e1);
-            acc_x_set_location(e1, acc_x_location);
             e = e1;
           }
           delete (ax);
@@ -1641,54 +1671,70 @@ subsec_list
         ;
 
 subsec
-        : '[' ':' ']' {
-          SgExpression* lb = SageBuilder::buildNullExpression();
-          acc_x_set_location(lb, acc_x_location);
-          SgExpression* ub = SageBuilder::buildNullExpression();
-          acc_x_set_location(ub, acc_x_location);
+        : '[' expr ']' {
+          /* (singleton) */
+          SgExpression* lb = $2;
+          SgExpression* sz = new SgIntVal(1, "1");
+          acc_x_set_location(sz, acc_x_location);
           SgExpression* one = new SgIntVal(1, "1");
           acc_x_set_location(one, acc_x_location);
-          SgExpression* e = new SgSubscriptExpression(lb, ub, one);
-          one->set_parent(e);
+          SgExpression* e = new SgSubscriptExpression(lb, sz, one);
           acc_x_set_location(e, acc_x_location);
+          lb->set_parent(e);
+          sz->set_parent(e);
+          one->set_parent(e);
+          $$ = e;
+        }
+        | '[' ':' ']' {
+          SgExpression* lb = SageBuilder::buildNullExpression();
+          acc_x_set_location(lb, acc_x_location);
+          SgExpression* sz = SageBuilder::buildNullExpression();
+          acc_x_set_location(sz, acc_x_location);
+          SgExpression* one = new SgIntVal(1, "1");
+          acc_x_set_location(one, acc_x_location);
+          SgExpression* e = new SgSubscriptExpression(lb, sz, one);
+          acc_x_set_location(e, acc_x_location);
+          lb->set_parent(e);
+          sz->set_parent(e);
+          one->set_parent(e);
           $$ = e;
         }
         | '[' expr ':' ']' {
           SgExpression* lb = $2;
-          SgExpression* ub = SageBuilder::buildNullExpression();
-          acc_x_set_location(ub, acc_x_location);
+          SgExpression* sz = SageBuilder::buildNullExpression();
+          acc_x_set_location(sz, acc_x_location);
           SgExpression* one = new SgIntVal(1, "1");
           acc_x_set_location(one, acc_x_location);
-          SgExpression* e = new SgSubscriptExpression(lb, ub, one);
-          lb->set_parent(e);
-          ub->set_parent(e);
-          one->set_parent(e);
+          SgExpression* e = new SgSubscriptExpression(lb, sz, one);
           acc_x_set_location(e, acc_x_location);
+          lb->set_parent(e);
+          sz->set_parent(e);
+          one->set_parent(e);
           $$ = e;
         }
         | '[' ':' expr ']' {
           SgExpression* lb = SageBuilder::buildNullExpression();
           acc_x_set_location(lb, acc_x_location);
-          SgExpression* ub = $3;
+          SgExpression* sz = $3;
           SgExpression* one = new SgIntVal(1, "1");
           acc_x_set_location(one, acc_x_location);
-          SgExpression* e = new SgSubscriptExpression(lb, ub, one);
-          lb->set_parent(e);
-          ub->set_parent(e);
-          one->set_parent(e);
+          SgExpression* e = new SgSubscriptExpression(lb, sz, one);
           acc_x_set_location(e, acc_x_location);
+          lb->set_parent(e);
+          sz->set_parent(e);
+          one->set_parent(e);
           $$ = e;
         }
         | '[' expr ':' expr ']' {
           SgExpression* lb = $2;
-          SgExpression* ub = $4;
+          SgExpression* sz = $4;
           SgExpression* one = new SgIntVal(1, "1");
           acc_x_set_location(one, acc_x_location);
-          SgExpression* e = new SgSubscriptExpression(lb, ub, one);
-          lb->set_parent(e);
-          ub->set_parent(e);
-          one->set_parent(e);
+          SgExpression* e = new SgSubscriptExpression(lb, sz, one);
           acc_x_set_location(e, acc_x_location);
+          lb->set_parent(e);
+          sz->set_parent(e);
+          one->set_parent(e);
           $$ = e;
         }
         ;
@@ -1713,7 +1759,8 @@ varid
 %%
 
 static int yyerror(const char *s) {
-  printf("ACC: %s\n", s);
+  std::string loc = accLocationString(acc_x_directive_node);
+  printf("ACC: %s at %s\n", s, loc.c_str());
   ROSE_ASSERT(0);
   return 0;
 }

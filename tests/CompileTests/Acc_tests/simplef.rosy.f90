@@ -30,11 +30,12 @@ REAL, INTENT(INOUT) :: a(:,:), b(:,:), c(:,:)
 INTEGER :: i, j, k
 REAL :: t
 !$acc data copyin (a, b), copy (c)
-!$acc kernels
 DO j = 1, n
+!$acc kernels copyin (a(1:n,j)), async (j)
 DO i = 1, n
 c(i,j) = 0.0
 END DO
+!$acc end kernels
 END DO
 DO j = 1, n
 DO i = 1, n
@@ -45,7 +46,6 @@ END DO
 c(i,j) = t
 END DO
 END DO
-!$acc end kernels
 !$acc end data
 END SUBROUTINE f1
 
@@ -69,7 +69,7 @@ IMPLICIT NONE
 INTEGER, INTENT(IN) :: n
 REAL, INTENT(INOUT) :: a, x(:), y(:)
 INTEGER :: i
-!$acc parallel loop dtype (pacs_g), vector_length (4096), gang (num: n), worker (1), vector (4096), dtype (xeonphi), vector_length (8), gang (num: n, static: 4), worker (60), vector (8), dtype (ndivia, radeon), vector_length (256), gang (num: n, static: *), worker , vector , dtype (*), vector_length (32), default(none) 
+!$acc parallel loop dtype (pacs_g), vector_length (4096), gang (num: n), worker (1), vector (4096), dtype (xeonphi), vector_length (8), gang (num: n, static: 4), worker (60), vector (8), dtype (ndivia, radeon), vector_length (256), gang (num: n, static: *), worker, vector, dtype (*), vector_length (32), default(none)
 DO i = 1, n
 y(i) = a * x(i) + y(i)
 END DO
@@ -144,6 +144,7 @@ IMPLICIT NONE
 INTEGER, INTENT(IN) :: n
 REAL, INTENT(INOUT) :: a(:), b(:)
 INTEGER :: i
+!$acc routine (bar), device ("foo")
 !$acc routine device (foo)
 !$acc kernels loop
 !$omp parallel 
@@ -212,9 +213,128 @@ END DO
 END DO
 END SUBROUTINE f10
 
+! (Block to end marker.  Block includes comments at before the end.)
+SUBROUTINE f11(n,a,b)
+IMPLICIT NONE
+INTEGER, INTENT(IN) :: n
+REAL, INTENT(INOUT) :: a(:), b(:)
+INTEGER :: i, j
+DO j = 1, n
+!$acc kernels
+DO i = 1, n
+b(i) = a(i) * 2.0
+END DO
+!$acc end kernels
+END DO
+DO j = 1, n
+!$acc wait (0)
+END DO
+END SUBROUTINE f11
+
+! (Miss end marker at before ELSE and END-IF.)
+SUBROUTINE f12(n,a,b)
+IMPLICIT NONE
+INTEGER, INTENT(IN) :: n
+REAL, INTENT(INOUT) :: a(:), b(:)
+INTEGER :: i
+IF (n .EQ. 10) THEN
+!$acc kernels
+DO i = 1, n
+b(i) = a(i) * 2.0
+END DO
+!$acc end kernels
+ELSE IF (n .EQ. 20) THEN
+!$acc kernels
+DO i = 1, n
+b(i) = a(i) * 2.0
+END DO
+!$acc end kernels
+ELSE 
+!$acc kernels
+DO i = 1, n
+b(i) = a(i) * 2.0
+END DO
+!$acc end kernels
+END IF
+IF (n .EQ. 10) THEN
+!$acc wait (0)
+ELSE IF (n .EQ. 20) THEN
+!$acc wait (0)
+ELSE 
+CONTINUE
+!$acc wait (0)
+END IF
+END SUBROUTINE f12
+
+! (Miss end marker at before CASE and END-SELECT.)
+SUBROUTINE f13(n,a,b)
+IMPLICIT NONE
+INTEGER, INTENT(IN) :: n
+REAL, INTENT(INOUT) :: a(:), b(:)
+INTEGER :: i
+SELECT CASE(n)
+CASE (30)
+!$acc kernels
+DO i = 1, n
+b(i) = a(i) * 2.0
+END DO
+!$acc end kernels
+CASE DEFAULT
+!$acc kernels
+DO i = 1, n
+b(i) = a(i) * 2.0
+END DO
+!$acc end kernels
+END SELECT
+SELECT CASE(n)
+CASE (30)
+!$acc wait (0)
+CASE DEFAULT
+!$acc wait (0)
+END SELECT
+END SUBROUTINE f13
+
+! (Block to end marker.)
+!! subroutine f12(n, a, b)
+!! implicit none
+!! integer, intent(in) :: n
+!! real, intent(inout) :: a(:), b(:)
+!! integer i, j
+!! associate (x => i)
+!! !-$ACC KERNELS
+!! do i = 1, n
+!! b(i) = a(x) * 2.0
+!! end do
+!! !-$ACC END KERNELS
+!! end associate
+!! end subroutine f12
+! (Block to end marker.)
+!! subroutine f12(n, a, b)
+!! implicit none
+!! integer, intent(in) :: n
+!! real, intent(inout) :: a(1:n), b(1:n)
+!! integer i, j
+!! forall (j = 1:n)
+!! !-$ACC KERNELS
+!! b(j) = a(j) * 2.0
+!! !-$ACC END KERNELS
+!! end forall
+!! where (a > 20.0)
+!! !-$ACC KERNELS
+!! b = a * 2.0
+!! !-$ACC END KERNELS
+!! else where (a > 10.0)
+!! !-$ACC KERNELS
+!! b = a * 2.0
+!! !-$ACC END KERNELS
+!! else where
+!! !-$ACC KERNELS
+!! b = a * 2.0
+!! !-$ACC END KERNELS
+!! end where
+!! end subroutine f12
 PROGRAM main
 IMPLICIT NONE
-!$acc routine (bar), device ("foo")
 STOP 
 END PROGRAM main
 

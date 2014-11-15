@@ -155,13 +155,10 @@ namespace AccSupport
   void accUnparseClause(UnparseLanguageIndependentConstructs* up,
                         SgAccClause* c, SgUnparse_Info& info) {
     ROSE_ASSERT(c != NULL);
-    bool psome = accUnparseClauseName(up, c, info);
-    if (psome) {
-      up->curprint(" ");
-    }
+    bool printsome = accUnparseClauseName(up, c, info);
     enum SgAccClause::acc_clause e = c->get_name();
     if (e == SgAccClause::e_acc_c_reduction) {
-      up->curprint("(");
+      up->curprint(printsome ? " (" : "(");
       std::vector<SgExpression*> ee = c->get_exprs();
       for (std::vector<SgExpression*>::iterator
              i = ee.begin(); i != ee.end(); i++) {
@@ -179,7 +176,7 @@ namespace AccSupport
       }
       up->curprint(")");
     } else if (e == SgAccClause::e_acc_c_dtype) {
-      up->curprint("(");
+      up->curprint(printsome ? " (" : "(");
       std::vector<SgExpression*> ee = c->get_exprs();
       for (std::vector<SgExpression*>::iterator
              i = ee.begin(); i != ee.end(); i++) {
@@ -194,32 +191,34 @@ namespace AccSupport
       up->curprint(")");
     } else if (e == SgAccClause::e_acc_c_gang) {
       std::vector<SgExpression*> ee = c->get_exprs();
-      assert(ee.size() == 2);
-      SgExpression* e0 = ee[0];
-      SgExpression* e1 = ee[1];
-      if (e0 != NULL || e1 != NULL) {
-        up->curprint("(");
-        if (e0 != NULL) {
-          up->curprint("num: ");
-          up->unparseExpression(e0, info);
-        }
-        if (e0 != NULL && e1 != NULL) {
-          up->curprint(", ");
-        }
-        if (e1 != NULL) {
-          if (isSgStringVal(e1) != NULL) {
-            up->curprint("static: *");
-          } else {
-            up->curprint("static: ");
-            up->unparseExpression(e1, info);
+      if (ee.size() > 0) {
+        assert(ee.size() == 2);
+        SgExpression* e0 = ee[0];
+        SgExpression* e1 = ee[1];
+        if (e0 != NULL || e1 != NULL) {
+          up->curprint(printsome ? " (" : "(");
+          if (e0 != NULL) {
+            up->curprint("num: ");
+            up->unparseExpression(e0, info);
           }
+          if (e0 != NULL && e1 != NULL) {
+            up->curprint(", ");
+          }
+          if (e1 != NULL) {
+            if (isSgStringVal(e1) != NULL) {
+              up->curprint("static: *");
+            } else {
+              up->curprint("static: ");
+              up->unparseExpression(e1, info);
+            }
+          }
+          up->curprint(")");
         }
-        up->curprint(")");
       }
     } else {
       std::vector<SgExpression*> ee = c->get_exprs();
       if (ee.size() > 0) {
-        up->curprint("(");
+        up->curprint(printsome ? " (" : "(");
         for (std::vector<SgExpression*>::iterator
                i = ee.begin(); i != ee.end(); i++) {
           if (i != ee.begin()) {

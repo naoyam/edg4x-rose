@@ -7,10 +7,7 @@
 HEADER_ACC_DIRECTIVE_START
     public:
 
-    enum acc_directive
-    {
-      //e_acc_bad = 0,
-
+    enum acc_directive {
       // Directives (2.5)
 
       e_acc_parallel,
@@ -58,10 +55,7 @@ HEADER_ACC_DIRECTIVE_END
 HEADER_ACC_CLAUSE_START
     public:
 
-    enum acc_clause
-    {
-      //e_acc_c_bad = 0,
-
+    enum acc_clause {
       // Clauses
 
       /* (dtype for device_type) */

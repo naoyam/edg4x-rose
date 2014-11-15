@@ -8,17 +8,19 @@
 // blocks (in accHuntForBlock()), because it does not skip
 // non-executable nodes such as pragma nodes.
 
-// MEMO (MINOR): (0) Continued directive lines are concatenated and
-// unparser output has reduced number of lines.  (1) No unparsers are
-// defined for ACC directives and clauses, since they are subclasses
-// of SgLocatedNodeSupport (they return empty string).  They are
-// unparsed via ACC blocks.  (0) AccBlock should better be divided
-// into two directive types, one of which affects blocks and the other
-// has executable parts.  (One be a subclass of SgBasicBlock and the
-// other be a subclass of SgExprStatement).  (1) Adding (pragma) nodes
-// after a block fails when the block is a body of a function
-// definition (a block is of type basic-block).  (2) The type
-// AttachedPreprocessingInfoType is vector<PreprocessingInfo*>.
+// NOTE: (0) Some nodes remain undeleted (deleting once-inserted nodes
+// breaks).
+
+// MEMO (MINOR): (0) ACC directives and clauses are unparsed via ACC
+// blocks, since they are subclasses of SgLocatedNodeSupport and no
+// unparsers are defined for them (they return empty string).  (1)
+// Adding (pragma) nodes after a block fails when the block is a body
+// of a function definition (a block is of type basic-block).  (2) The
+// type AttachedPreprocessingInfoType is vector<PreprocessingInfo*>.
+// (3) AccBlock may better be divided into two directive types, one
+// which affectes following statements and the other includes
+// executable parts.  (One be a subclass of SgBasicBlock and the other
+// be a subclass of SgExprStatement).
 
 #include <iostream>
 #include <vector>
@@ -41,6 +43,20 @@ namespace AccSupport
 
 #define VERBOSE2PRINT(...) \
   if (SgProject::get_verbose() > 1) {printf(__VA_ARGS__);}
+
+  std::string accLocationString(Sg_File_Info* info) {
+    // (Or use Sg_File_Info::displayString(label)).
+    std::stringstream ss;
+    ss << /*info->get_filename()*/ info->get_physical_filename()
+       << ":" << info->get_line()
+       << "." << info->get_col() << "";
+    return ss.str();
+  }
+
+  std::string accLocationString(SgLocatedNode* node) {
+    Sg_File_Info* info = node->get_startOfConstruct();
+    return accLocationString(info);
+  }
 
   // Returns a target (affected) statement of a directive: ACC_SELF
   // for nothing, ACC_NEXT for the next statement, and ACC_F_BLOCK for
@@ -197,37 +213,47 @@ namespace AccSupport
   void accParseDirectives(SgSourceFile *file);
   void accParseDirectiveNode(SgPragmaDeclaration* dir, SgSourceFile *file);
 
-  // Trims off "!..." pattern from both ends of the string and leave
-  // only "!$omp..." or "!$acc...".  (This is a copy of
-  // "removeFortranComments()" in "ompFortranParser.C").
+  // Finds the directive pattern and trims off whitespaces and "!..."
+  // pattern at ends, and leaves only "!$omp..." or "!$acc...".  (This
+  // is a copy of "removeFortranComments()" in "ompFortranParser.C").
 
-  std::string accTrimNondirectives(std::string &s, std::string ompacc) {
+  std::string accTrimNondirectives(std::string &s, std::string ompacc,
+                                   Sg_File_Info* info) {
     size_t keylen = ompacc.size();
-    size_t beg = std::string::npos;
+    size_t beg = s.find_first_not_of(" \t", 0);
+    if (s.compare(beg, keylen, ompacc) != 0) {
+      return "";
+    }
     size_t end = s.size();
-    for (size_t p = s.find("!", 0);
+    for (size_t p = s.find("!", (beg + 1));
          p != std::string::npos; p = s.find("!", (p + 1))) {
-      if (s.compare(p, keylen, ompacc) == 0) {
-        if (beg != std::string::npos) {
-          std::cerr << "ACC: error: Multiple pragmas in a line" << std::endl;
-          ROSE_ASSERT(0);
-        }
-        beg = p;
-      } else if (beg != std::string::npos && p < end) {
-        assert(beg < p);
+      if (s.compare(p, keylen, ompacc) != 0) {
+        std::cerr << "ACC: error: Multiple pragmas in a line" << std::endl;
+        std::cerr << accLocationString(info) << std::endl;
+      }
+      if (p < end) {
         end = p;
       }
-    }
-    if (beg == std::string::npos) {
-      beg = end;
     }
     end = (s.find_last_not_of(" \t", end) + 1);
     return s.substr(beg, (end - beg));
   }
 
+  // Makes a new file information referring to the original file but
+  // moved to a location of a given preprocessor line.
+
+  Sg_File_Info* accMergeLocation(Sg_File_Info* node, Sg_File_Info* loc) {
+    Sg_File_Info* i = new Sg_File_Info(*node);
+    i->set_line(loc->get_line());
+    i->set_col(loc->get_col());
+    i->set_physical_line(loc->get_physical_line());
+    return i;
+  }
+
   // Destructively appends string S to string DIREC, dropping two "&".
 
-  void accAppendContinuedDirective(std::string &direc, std::string s) {
+  void accAppendContinuedDirective(std::string &direc, std::string s,
+                                   Sg_File_Info* info) {
     if (direc == "") {
       direc = s;
     } else {
@@ -235,6 +261,7 @@ namespace AccSupport
       size_t pos0 = s.find_first_not_of(" \t", 5);
       if (pos0 == std::string::npos || s.at(pos0) != '&') {
         std::cerr << "ACC: error: Bad pragma continuation line" << std::endl;
+        std::cerr << accLocationString(info) << std::endl;
         ROSE_ASSERT(0);
       }
       /*size_t pos1 = s.find_first_not_of(" \t", (pos0 + 1));*/
@@ -310,7 +337,7 @@ namespace AccSupport
     std::vector<SgStatement*> pragmas;
     std::vector<PreprocessingInfo*> others;
     std::string line = "";
-    PreprocessingInfo* pos[2] = {NULL, NULL};
+    Sg_File_Info* pos[2] = {NULL, NULL};
     PreprocessingInfo::RelativePositionType pploc = PreprocessingInfo::undef;
 
     std::vector<PreprocessingInfo*>*
@@ -321,45 +348,46 @@ namespace AccSupport
 
     for (std::vector<PreprocessingInfo*>::iterator
            i = pplines->begin(); i != pplines->end(); i++) {
-      PreprocessingInfo* p = (*i);
-      /*p->display("ACCACC");*/
+      PreprocessingInfo* pp = (*i);
 
-      if (!(p->getNumberOfLines() == 1
-            && p->getTypeOfDirective() == FortranStyleComment)) {
+      if (!(pp->getNumberOfLines() == 1
+            && pp->getTypeOfDirective() == FortranStyleComment)) {
         // Skip non-comments.
-        others.push_back(p);
+        others.push_back(pp);
         continue;
       }
 
-      std::string s = p->getString();
+      std::string s = pp->getString();
       std::transform(s.begin(), s.end(), s.begin(), ::tolower);
-      std::string d = accTrimNondirectives(s, "!$acc");
+      std::string d = accTrimNondirectives(s, "!$acc", pp->get_file_info());
 
       if (d == "") {
         // Skip non-directive comments.
         if (line != "") {
           std::cerr << "ACC: error: Comment after a continued directive"
                     << std::endl;
+          std::cerr << accLocationString(onode) << std::endl;
           ROSE_ASSERT(0);
         }
-        others.push_back(p);
+        others.push_back(pp);
         continue;
       }
 
       // See a directive line.
 
-      accAppendContinuedDirective(line, d);
+      assert(pp->getNumberOfLines() == 1);
+      accAppendContinuedDirective(line, d, pp->get_file_info());
       if (pos[0] == NULL) {
-        pos[0] = p;
+        pos[0] = pp->get_file_info();
       }
-      pos[1] = p;
+      pos[1] = pp->get_file_info();
 
       if (pploc == PreprocessingInfo::undef) {
-        pploc = p->getRelativePosition();
+        pploc = pp->getRelativePosition();
       }
-      assert(pploc == p->getRelativePosition());
+      assert(pploc == pp->getRelativePosition());
 
-      assert(line.size() != 0 && pos != NULL);
+      assert(line.size() != 0 && pos[0] != NULL);
       if (line.at(line.size() - 1) == '&') {
         // Collect continued directive lines.
         continue;
@@ -368,12 +396,12 @@ namespace AccSupport
       /*VERBOSE2PRINT("ACC: directive=%s\n", line.c_str());*/
 
       {
-        /* buildPragmaDeclaration() cannot be used here. */
+        // buildPragmaDeclaration() cannot be used here.
 
-        Sg_File_Info* beg = pos[0]->get_file_info();
-        Sg_File_Info* end = new Sg_File_Info(*(pos[1]->get_file_info()));
-        assert(pos[1]->getNumberOfLines() == 1);
-        end->set_col(pos[1]->getColumnNumberOfEndOfString());
+        Sg_File_Info* ofile = onode->get_startOfConstruct();
+        Sg_File_Info* beg = accMergeLocation(ofile, pos[0]);
+        Sg_File_Info* end = accMergeLocation(ofile, pos[1]);
+        end->set_col(pp->getColumnNumberOfEndOfString());
 
         std::string ss = line.substr(2, std::string::npos);
         SgPragma* p0 = new SgPragma(ss);
@@ -388,6 +416,7 @@ namespace AccSupport
         dnode->set_definingDeclaration(dnode);
         dnode->set_firstNondefiningDeclaration(dnode);
 
+        delete beg;
         delete end;
 
         if (others.size() > 0) {
@@ -405,6 +434,7 @@ namespace AccSupport
               std::cerr << "ACC: error: Unexpected preprocessor lines;"
                         << " Preprocessor lines attached (inside) to: "
                         << onode->class_name() << std::endl;
+              std::cerr << accLocationString(onode) << std::endl;
               ROSE_ASSERT(0);
             }
             for (std::vector<PreprocessingInfo*>::iterator
@@ -418,8 +448,8 @@ namespace AccSupport
             break;
           }
           std::vector<PreprocessingInfo*>*
-            pp = new std::vector<PreprocessingInfo*>(others);
-          dnode->set_attachedPreprocessingInfoPtr(pp);
+            vv = new std::vector<PreprocessingInfo*>(others);
+          dnode->set_attachedPreprocessingInfoPtr(vv);
           others.clear();
         }
 
@@ -432,6 +462,7 @@ namespace AccSupport
     if (line != "") {
       std::cerr << "ACC: error: Nothing comes after a continued line"
                 << std::endl;
+      std::cerr << accLocationString(onode) << std::endl;
       ROSE_ASSERT(0);
     }
 
@@ -444,6 +475,7 @@ namespace AccSupport
       case PreprocessingInfo::undef:
         std::cerr << "ACC: error: Bad preprocessor line position (undef)"
                   << std::endl;
+        std::cerr << accLocationString(onode) << std::endl;
         ROSE_ASSERT(0);
         break;
 
@@ -453,12 +485,21 @@ namespace AccSupport
           std::cerr << "ACC: error: (internal) Unexpected preprocessor lines;"
                << " Preprocessor lines attached (before) to: "
                << onode->class_name() << std::endl;
+          std::cerr << accLocationString(onode) << std::endl;
           ROSE_ASSERT(0);
         }
         /*SageInterface::insertStatementList(nodex, pragmas, true);*/
         for (std::vector<SgStatement*>::iterator
                k = pragmas.begin(); k != pragmas.end(); k++) {
           SageInterface::insertStatement(nodex, (*k), true, false);
+
+          if (file->get_acc_verbose()) {
+            fprintf(stderr, "ACC: attach pragma (%s) to (%s) at %s\n",
+                    (((SgPragmaDeclaration*)(*k))
+                     ->get_pragma()->get_pragma().c_str()),
+                    onode->class_name().c_str(),
+                    accLocationString(onode).c_str());
+          }
         }
         break;
       }
@@ -466,6 +507,7 @@ namespace AccSupport
       case PreprocessingInfo::after:
         std::cerr << "ACC: error: Bad preprocessor line position (after)"
                   << std::endl;
+        std::cerr << accLocationString(onode) << std::endl;
         ROSE_ASSERT(0);
         break;
 
@@ -475,6 +517,7 @@ namespace AccSupport
           std::cerr << "ACC: error: (internal) Unexpected preprocessor lines;"
                << " Preprocessor lines attached (inside) to: "
                << onode->class_name() << std::endl;
+          std::cerr << accLocationString(onode) << std::endl;
           ROSE_ASSERT(0);
         }
         SageInterface::appendStatementList(pragmas, nodex);
@@ -485,6 +528,7 @@ namespace AccSupport
       case PreprocessingInfo::after_syntax:
         std::cerr << "ACC: error: Bad preprocessor line position"
              << " (before/after_syntax)" << std::endl;
+        std::cerr << accLocationString(onode) << std::endl;
         ROSE_ASSERT(0);
         break;
       }
@@ -515,6 +559,7 @@ namespace AccSupport
       dpos = std::find(seq->begin(), seq->end(), dnode);
     if (dpos == seq->end()) {
       std::cerr << "ACC: error: Cannot position an ACC directive" << std::endl;
+      std::cerr << accLocationString(dnode) << std::endl;
       ROSE_ASSERT(0);
     }
 
@@ -552,6 +597,7 @@ namespace AccSupport
       case e_acc_atomic_capture:
       default:
         std::cerr << "ACC: error: Cannot position ACC block end" << std::endl;
+        std::cerr << accLocationString(dnode) << std::endl;
         ROSE_ASSERT(0);
         break;
       }
@@ -560,6 +606,7 @@ namespace AccSupport
     long count = std::distance(begpos, endpos);
     if (count == 0) {
       std::cerr << "ACC: error: Empty block for ACC directive" << std::endl;
+      std::cerr << accLocationString(dnode) << std::endl;
       ROSE_ASSERT(0);
     }
 
@@ -586,6 +633,11 @@ namespace AccSupport
       VERBOSE2PRINT("ACC: processing...\n");
     }
 
+    if (file->get_acc_spot()) {
+      VERBOSE2PRINT("ACC: stop after spotting directives (acc_spot)\n");
+      return;
+    }
+
     std::vector<SgNode*>
       directives = NodeQuery::querySubTree(file, V_SgPragmaDeclaration);
 
@@ -602,8 +654,8 @@ namespace AccSupport
       accParseDirectiveNode(dir, file);
     }
 
-    if (file->get_acc_ast_only()) {
-      VERBOSE2PRINT("ACC: skipping lower processing (acc_ast_only)\n");
+    if (file->get_acc_parse()) {
+      VERBOSE2PRINT("ACC: stop after building AST nodes (acc_parse)\n");
       return;
     }
 
@@ -648,6 +700,12 @@ namespace AccSupport
 
     // Replace a pragma with a new acc-block.
 
+    if (isSgGlobal(dnode->get_parent()) != NULL) {
+      std::cerr << "ACC: error: stray directive" << std::endl;
+      std::cerr << accLocationString(dnode) << std::endl;
+      ROSE_ASSERT(n != NULL);
+    }
+
     SgAccBlock* accstmt = new SgAccBlock(v, NULL);
     v->set_parent(accstmt);
     Sg_File_Info* beg = dnode->get_startOfConstruct();
@@ -678,6 +736,7 @@ namespace AccSupport
         if (n == NULL) {
           std::cerr << "ACC: error: No applicable statements to directive"
                     << std::endl;
+          std::cerr << accLocationString(dnode) << std::endl;
           ROSE_ASSERT(n != NULL);
         }
         SgBasicBlock* body;
@@ -704,6 +763,7 @@ namespace AccSupport
         bool endp = accHuntForBlock(v, dnode, &seq, file, &begpos, &endpos);
         SgAccBlock* enode;
         if (endp) {
+          assert(endpos != seq.end() && isSgAccBlock(*endpos) != NULL);
           enode = isSgAccBlock(*endpos);
         } else {
           enode = NULL;
@@ -721,14 +781,12 @@ namespace AccSupport
         }
         accstmt->set_body(body);
         body->set_parent(accstmt);
-        if (enode != NULL) {
-          accstmt->set_closing(enode);
-        }
         accstmt->set_parent(dnode->get_parent());
         SageInterface::replaceStatement(dnode, accstmt, false);
-        /*SageInterface::removeStatement(dnode, false);*/
         if (enode != NULL) {
           SageInterface::removeStatement(enode, false);
+          enode->set_parent(NULL);
+          accstmt->set_closing(enode);
         }
         /*delete dnode;*/
      }

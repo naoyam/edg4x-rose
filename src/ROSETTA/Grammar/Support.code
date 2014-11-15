@@ -14232,7 +14232,9 @@ SgFile::initialization()
 //RIKEN
 #if (USE_ACC_IR_NODES == 1)
      p_acc                     = false;
-     p_acc_ast_only            = false;
+     p_acc_spot                = false;
+     p_acc_parse               = false;
+     p_acc_verbose             = false;
 #endif
 //RIKEN
 

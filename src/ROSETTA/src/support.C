@@ -950,7 +950,15 @@ Grammar::setUpSupport ()
        NO_CONSTRUCTOR_PARAMETER, BUILD_FLAG_ACCESS_FUNCTIONS,
        NO_TRAVERSAL, NO_DELETE);
      File.setDataPrototype(
-       "bool", "acc_ast_only", "= false",
+       "bool", "acc_spot", "= false",
+       NO_CONSTRUCTOR_PARAMETER, BUILD_FLAG_ACCESS_FUNCTIONS,
+       NO_TRAVERSAL, NO_DELETE);
+     File.setDataPrototype(
+       "bool", "acc_parse", "= false",
+       NO_CONSTRUCTOR_PARAMETER, BUILD_FLAG_ACCESS_FUNCTIONS,
+       NO_TRAVERSAL, NO_DELETE);
+     File.setDataPrototype(
+       "bool", "acc_verbose", "= false",
        NO_CONSTRUCTOR_PARAMETER, BUILD_FLAG_ACCESS_FUNCTIONS,
        NO_TRAVERSAL, NO_DELETE);
 #endif //(USE_ACC_IR_NODES == 1)

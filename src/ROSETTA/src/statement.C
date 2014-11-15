@@ -3932,7 +3932,7 @@ Grammar::setUpStatements ()
       CONSTRUCTOR_PARAMETER, BUILD_ACCESS_FUNCTIONS,
       DEF_TRAVERSAL, NO_DELETE);
     AccBlock.setDataPrototype(
-      "SgAccBlock*", "closing", "",
+      "SgAccBlock*", "closing", " = NULL",
       NO_CONSTRUCTOR_PARAMETER, BUILD_ACCESS_FUNCTIONS,
       NO_TRAVERSAL, NO_DELETE);
 

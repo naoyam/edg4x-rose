@@ -46,7 +46,7 @@ class Unparser_Nameq;
   #define MAX_F90_LINE_LEN_FIXED  72
   #define MAX_F90_LINE_LEN_FREE  132
 #else
-  #define MAX_F90_LINE_LEN      1024
+  #define MAX_F90_LINE_LEN      4096
 #endif
 
 #define KAI_NONSTD_IOSTREAM 1

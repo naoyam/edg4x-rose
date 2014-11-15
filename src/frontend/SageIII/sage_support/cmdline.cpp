@@ -2957,8 +2957,12 @@ SgFile::usage ( int status )
 //#if (USE_ACC_IR_NODES == 1)
 "     -rose:acc\n"
 "                             enable OpenACC directive processing\n"
-"     -rose:acc:ast_only\n"
-"                             build ACC AST nodes\n"
+"     -rose:acc:spot\n"
+"                             stop after inserting pragma nodes (fortran)\n"
+"     -rose:acc:parse\n"
+"                             stop after building acc nodes\n"
+"     -rose:acc:verbose\n"
+"                             be verbose in acc processing\n"
 //#endif //(USE_ACC_IR_NODES == 1)
 //RIKEN
 "     -rose:UPC_only, -rose:UPC\n"
@@ -4290,21 +4294,35 @@ SgFile::processRoseCommandLineOptions ( vector<string> & argv )
 //RIKEN
 //#if (USE_ACC_IR_NODES == 1)
 
-     if (CommandlineProcessing::isOption(argv, "-rose:", "acc", true)
-         || CommandlineProcessing::isOption(argv, "-rose:", "ACC", true)) {
+     if (CommandlineProcessing::isOption(argv, "-rose:", "acc", true)) {
        if (SgProject::get_verbose() >= 1) {
          printf("ACC options specified \n");
        }
        set_acc(true);
      }
 
-     if (CommandlineProcessing::isOption(argv, "-rose:acc:", "ast_only", true)
-         || CommandlineProcessing::isOption(argv, "-rose:ACC:", "ast_only", true)) {
+     if (CommandlineProcessing::isOption(argv, "-rose:acc:", "spot", true)) {
        if (SgProject::get_verbose() >= 1) {
-         printf ("ACC AST construction specified \n");
+         printf ("ACC: stop after inserting pragma nodes \n");
        }
-       set_acc_ast_only(true);
+       set_acc_spot(true);
+       set_acc_parse(true);
        set_acc(true);
+     }
+
+     if (CommandlineProcessing::isOption(argv, "-rose:acc:", "parse", true)) {
+       if (SgProject::get_verbose() >= 1) {
+         printf ("ACC: stop after building acc nodes \n");
+       }
+       set_acc_parse(true);
+       set_acc(true);
+     }
+
+     if (CommandlineProcessing::isOption(argv, "-rose:acc:", "verbose", true)) {
+       if (SgProject::get_verbose() >= 1) {
+         printf ("ACC: verbose \n");
+       }
+       set_acc_verbose(true);
      }
 
      if (get_acc()) {
@@ -4941,8 +4959,10 @@ SgFile::stripRoseCommandLineOptions ( vector<string> & argv )
      optionCount = sla(argv, "-rose:", "($)", "(openmp:lowering|OpenMP:lowering)",1);
 //RIKEN
 //#if (USE_ACC_IR_NODES == 1)
-     optionCount = sla(argv, "-rose:", "($)", "(ACC|acc)", 1);
-     optionCount = sla(argv, "-rose:", "($)", "(ACC:ast_only|acc:ast_only)",1);
+     optionCount = sla(argv, "-rose:", "($)", "(acc)", 1);
+     optionCount = sla(argv, "-rose:", "($)", "(acc:spot)",1);
+     optionCount = sla(argv, "-rose:", "($)", "(acc:parse)",1);
+     optionCount = sla(argv, "-rose:", "($)", "(acc:verbose)",1);
 //#endif //(USE_ACC_IR_NODES == 1)
 //RIKEN
      optionCount = sla(argv, "-rose:", "($)", "(C89|C89_only)",1);

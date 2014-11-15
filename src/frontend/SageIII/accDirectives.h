@@ -45,6 +45,8 @@ namespace AccSupport
   enum SgAccDirective::acc_directive accBlockClosing(
     enum SgAccDirective::acc_directive e);
 
+  std::string accLocationString(SgLocatedNode* node);
+
   // Import short visible names for enumerations.
 
 #define DIRECTIVETYPE(X) \
