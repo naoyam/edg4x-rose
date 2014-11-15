@@ -445,7 +445,46 @@ setOperatorSourcePosition  ( SgExpression* expr, Token_t* token )
      expr->get_operatorPosition()->set_parent(expr);
    }
 
+#if 1 //RIKEN
 
+// Expands a location information of a block to the end marker (beyond
+// the last statement), to properly include tailing comments in the
+// block.  It moves the start when BEGINNING is true.
+
+// This is a simpler version of the operation on the DO statement in
+// resetEndingSourcePosition().  It is used for the executable
+// constructs: SgAssociateStatement, BLOCK, CRITICAL, (SgFortranDo),
+// SgIfStmt, SgSwitchStatement, SELECT-TYPE, SgForAllStatement and
+// SgWhereStatement.  It cannot be performed inside of
+// resetEndingSourcePosition() because it misses location information
+// of some keywords of ELSE, etc.
+
+void expandBlockLocation(SgBasicBlock* o, bool beginning, Token_t* newloc) {
+  Sg_File_Info* oo = (beginning
+                      ? o->get_startOfConstruct()
+                      : o->get_endOfConstruct());
+  assert(oo != NULL);
+  std::string file = getCurrentFilename();
+  if (oo->get_filenameString() == file) {
+    if (beginning) {
+      if ((newloc->line < oo->get_line())
+          || ((newloc->line == oo->get_line())
+              && (newloc->col < oo->get_col()))) {
+        oo->set_line(newloc->line);
+        oo->set_col(newloc->col);
+      }
+    } else {
+      if ((oo->get_line() < newloc->line)
+          || ((oo->get_line() == newloc->line)
+              && (oo->get_col() < newloc->col))) {
+        oo->set_line(newloc->line);
+        oo->set_col(newloc->col);
+      }
+    }
+  }
+}
+
+#endif //RIKEN
 
 void
 resetSourcePosition( SgLocatedNode* locatedNode, const TokenListType & tokenList )
@@ -616,6 +655,20 @@ resetEndingSourcePosition( SgLocatedNode* targetLocatedNode, Token_t* token )
          body->get_endOfConstruct()->set_col(f_do->get_endOfConstruct()->get_col());
        
     }
+
+#if 1 //RIKEN
+    // Adjust positions of block end as END-DO above.  Adjusting
+    // positions is needed to properly attach comment lines.
+    if (isSgAssociateStatement(targetLocatedNode) != NULL) {
+      SgAssociateStatement* stmt = isSgAssociateStatement(targetLocatedNode);
+      SgBasicBlock* b = stmt->get_body();
+      assert(b != NULL);
+      expandBlockLocation(b, false, token);
+    }
+    // DO is handled above; IF, SELECT, and WHERE blocks are handled
+    // in FortranParserActionROSE.C; No FORALL, BLOCK, CRITICAL, or
+    // SELECT-TYPE blocks in ROSE (forall-statement only).
+#endif //RIKEN
 
   // If this is the top level scope then iterate over the outer scopes to reset the end of each scope on the stack.
      if (astScopeStack.front() == targetLocatedNode)

@@ -195,6 +195,10 @@ void setSourceEndPosition  ( SgLocatedNode* locatedNode, Token_t* token );
 
 void setOperatorSourcePosition  ( SgExpression* expr, Token_t* token );
 
+#if 1 //RIKEN
+void expandBlockLocation(SgBasicBlock* o, bool beginning, Token_t* newloc);
+#endif //RIKEN
+
 void resetSourcePosition( SgLocatedNode* locatedNode, const TokenListType & tokenList );
 void resetSourcePosition( SgLocatedNode* targetLocatedNode, const SgLocatedNode* sourceLocatedNode );
 

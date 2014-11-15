@@ -10157,6 +10157,13 @@ void c_action_label(Token_t * lbl)
         astScopeStack.pop_front();
         astScopeStack.push_front(elseWhereBody);
 
+#if 1 //RIKEN
+	//(elsewhere())
+        SgBasicBlock* b0 = current_where_body;
+        assert(b0 != NULL);
+        expandBlockLocation(b0, false, elseKeyword);
+#endif //RIKEN
+
 #if 0
         // Output debugging information about saved state (stack) information.
         outputState("At BOTTOM of R749 c_action_masked_elsewhere_stmt()");
@@ -10264,6 +10271,13 @@ void c_action_label(Token_t * lbl)
 
         astScopeStack.pop_front();
         astScopeStack.push_front(elseWhereBody);
+
+#if 1 //RIKEN
+        //(elsewhere)
+        SgBasicBlock* b0 = current_where_body;
+        assert(b0 != NULL);
+        expandBlockLocation(b0, false, elseKeyword);
+#endif //RIKEN
     }
 
     /** R750 end
@@ -10301,6 +10315,13 @@ void c_action_label(Token_t * lbl)
         if (SgProject::get_verbose() > DEBUG_RULE_COMMENT_LEVEL)
         printf("In R751 c_action_end_where_stmt() label = %p id = %p = %s \n",
                 label, id, id ? id->text : "NULL");
+
+#if 1 //RIKEN
+        //(endwhere)
+        SgBasicBlock* b0 = isSgBasicBlock(astScopeStack.front());
+        assert(b0 != NULL);
+        expandBlockLocation(b0, false, endKeyword);
+#endif //RIKEN
 
         // DQ (10/10/2010): Test ending position
         ROSE_ASSERT(astScopeStack.front()->get_endOfConstruct() != NULL);
@@ -10641,6 +10662,9 @@ void c_action_label(Token_t * lbl)
                     astScopeStack.front()->get_endOfConstruct()->get_line() + 1);
         }
 
+#if 0 //RIKEN
+        // (Remove checks to accept empty blocks (e.g, else part of if.)
+
         // Debugging support...(used for debugging test2011_40.f90).
         if (astScopeStack.front()->get_endOfConstruct()->get_line()
                 == astScopeStack.front()->get_startOfConstruct()->get_line())
@@ -10655,6 +10679,8 @@ void c_action_label(Token_t * lbl)
                     astScopeStack.front()->get_endOfConstruct()->get_line());
         }
         ROSE_ASSERT(astScopeStack.front()->get_endOfConstruct()->get_line() != astScopeStack.front()->get_startOfConstruct()->get_line());
+
+#endif //RIKEN
 
         // This scope on the stack shuold be a SgBasicBlock
         ROSE_ASSERT(isSgBasicBlock(astScopeStack.front()) != NULL);
@@ -10854,6 +10880,15 @@ void c_action_label(Token_t * lbl)
         // printf ("CLEAR THE astLabelSymbolStack (c_action_else_if_stmt) \n");
         astLabelSymbolStack.clear();
 
+#if 1 //RIKEN
+        //(elseif)
+        SgBasicBlock* b0 = isSgBasicBlock(ifStatement->get_true_body());
+        assert(b0 != NULL);
+        expandBlockLocation(b0, false, elseKeyword);
+        std::vector<SgStatement*>& v0 = false_body->get_statements();
+        assert(v0.size() > 0);
+#endif //RIKEN
+
 #if 0
         // Output debugging information about saved state (stack) information.
         outputState("At BOTTOM of R804 c_action_else_if_stmt()");
@@ -10913,6 +10948,28 @@ void c_action_label(Token_t * lbl)
 
         // printf ("CLEAR THE astLabelSymbolStack (c_action_else_stmt) \n");
         astLabelSymbolStack.clear();
+
+#if 1 //RIKEN
+        //(else)
+        SgBasicBlock* b0 = isSgBasicBlock(ifStatement->get_true_body());
+        assert(b0 != NULL);
+        expandBlockLocation(b0, false, elseKeyword);
+#endif //RIKEN
+
+#if 1 //RIKEN
+        // (Make last else part non-empty not to be deleted).
+        assert(astScopeStack.front() == false_body);
+        std::vector<SgStatement*>& v0 = false_body->get_statements();
+        assert(v0.size() == 0);
+        SgStatement* nop = new SgLabelStatement("", NULL);
+        SgFunctionDefinition*
+          d = TransformationSupport::getFunctionDefinition(false_body);
+        assert(d != NULL);
+        nop->set_scope(d);
+        setSourcePosition(nop);
+        nop->setCompilerGenerated();
+        false_body->append_statement(nop);
+#endif //RIKEN
     }
 
     /** R806
@@ -10950,6 +11007,31 @@ void c_action_label(Token_t * lbl)
             ROSE_ASSERT(label->text != NULL);
             // printf ("label->text = %s \n",label->text);
         }
+
+#if 1 //RIKEN
+        //(endif)
+        SgIfStmt* laststmt = isSgIfStmt(astScopeStack.front());
+        assert(laststmt != NULL);
+        SgBasicBlock* b0 = isSgBasicBlock(laststmt->get_true_body());
+        SgBasicBlock* b1 = isSgBasicBlock(laststmt->get_false_body());
+        assert(b0 != NULL && b1 != NULL);
+        std::vector<SgStatement*>& v1 = b1->get_statements();
+        if (v1.size() == 0) {
+          expandBlockLocation(b0, false, endKeyword);
+        } else {
+          expandBlockLocation(b1, false, endKeyword);
+        }
+        // (Delete a record which makes the else part non-empty; Leave
+        // it when it is an only element).
+        if (v1.size() >= 2) {
+          SgLabelStatement* nop = isSgLabelStatement(v1[0]);
+          if (nop != NULL /*&& nop->isCompilerGenerated()*/
+              && nop->get_statement() == NULL
+              && nop->get_label().getString() == "") {
+            v1.erase(v1.begin());
+          }
+        }
+#endif //RIKEN
 
         // DQ (12/12/2007): After implimenting the support for the select and case statements
         // it made more sense to pop the scope in R801 instead of here.
@@ -11287,6 +11369,20 @@ void c_action_label(Token_t * lbl)
 
         // ROSE_ASSERT(astExpressionStack.empty() == false);
 
+#if 1 //RIKEN
+        //(case)
+        SgBasicBlock* laststmt = isSgBasicBlock(astScopeStack.front());
+        assert(laststmt != NULL);
+        expandBlockLocation(laststmt, false, caseKeyword);
+        std::vector<SgStatement*> ss = laststmt->get_statements();
+        if (ss.size() > 0 && isSgCaseOptionStmt(ss[0]) != NULL) {
+          SgCaseOptionStmt* b0 = isSgCaseOptionStmt(ss[0]);
+          SgBasicBlock* b1 = isSgBasicBlock(b0->get_body());
+          assert(b1 != NULL);
+          expandBlockLocation(b1, false, caseKeyword);
+        }
+#endif //RIKEN
+
         SgBasicBlock* body = new SgBasicBlock();
         ROSE_ASSERT(body != NULL);
 
@@ -11398,6 +11494,28 @@ void c_action_label(Token_t * lbl)
             ROSE_ASSERT(label->text != NULL);
             printf("label->text = %s \n", label->text);
         }
+
+#if 1 //RIKEN
+        //(endselect)
+        SgBasicBlock* laststmt = isSgBasicBlock(astScopeStack.front());
+        assert(laststmt != NULL);
+        expandBlockLocation(laststmt, false, endKeyword);
+        std::vector<SgStatement*> ss = laststmt->get_statements();
+        if (ss.size() > 0) {
+          SgStatement* g0 = ss[ss.size() - 1];
+          if (isSgCaseOptionStmt(g0) != NULL) {
+            SgCaseOptionStmt* g = isSgCaseOptionStmt(g0);
+            SgBasicBlock* b = isSgBasicBlock(g->get_body());
+            assert(b != NULL);
+            expandBlockLocation(b, false, endKeyword);
+          } if (isSgDefaultOptionStmt(g0) != NULL) {
+            SgDefaultOptionStmt* g = isSgDefaultOptionStmt(g0);
+            SgBasicBlock* b = isSgBasicBlock(g->get_body());
+            assert(b != NULL);
+            expandBlockLocation(b, false, endKeyword);
+          }
+        }
+#endif //RIKEN
 
         // DQ (10/10/2010): Test ending position
         ROSE_ASSERT(astScopeStack.empty() == false);
