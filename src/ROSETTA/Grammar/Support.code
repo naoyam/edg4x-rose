@@ -9493,13 +9493,13 @@ ReturnType* SgSymbolTable::find_symbol_with_type_support (const SgName & nm, con
 #endif
                  // assert(functionSymbol != NULL);
                  // return functionSymbol;
-#if 0 /*RIKEN*/
-                    /* (Delete an assertion, because null is allowed
-                       for a function rename.  It happens due to the
-                       fix to stop replacing a function name by its
-                       rename). */
+#if 0 //RIKEN
+                    // (Delete an assertion, because null is allowed
+                    // for a function rename.  It happens due to the
+                    // fix to stop replacing a function name by its
+                    // rename).
                     ROSE_ASSERT(original_renamed_symbol != NULL);
-#endif /*RIKEN*/
+#endif //RIKEN
                     return original_renamed_symbol;
                   }
              }

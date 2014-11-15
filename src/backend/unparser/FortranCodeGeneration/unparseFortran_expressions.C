@@ -1726,147 +1726,117 @@ FortranCodeGeneration_locatedNode::unparseULongLongIntVal(SgExpression* expr, Sg
 // provide Fortran specific variations if required later.
 #endif
 
-#if 1 /*RIKEN*/
+#if 1 //RIKEN
 
-/* Bring back unparsers for reals.  (The endif above is moved up
-   here).  They are needed to print infinity values.  The code is
-   copied from the corresponding printers in
-   "unparseLanguageIndependentConstructs.C". */
+// Bring back unparsers for reals.  (The endif above is moved up
+// here).  They are needed to print infinity values.  The code is
+// copied from the corresponding printers in
+// "unparseLanguageIndependentConstructs.C".
 
-/* Printing infinity is approximated by a huge value (a value in
-   range).  The conventions of "1.e99_kind" cannot be used because a
-   constant variable representing the kind is not readily available
-   generally.  IEEE inf needs the ieee-module and is not readily
-   available generally, either.  Also, it assumes constant folding
-   never introduces non-numbers. */
+// Printing infinity is approximated by a huge value (a value in
+// range).  The conventions of "1.e99_kind" cannot be used because a
+// constant variable representing the kind is not readily available
+// generally.  IEEE inf needs the ieee-module and is not readily
+// available generally, either.  Also, it assumes constant folding
+// never introduces non-numbers.
 
 #define NO_LITERAL_NAN_IN_FORTRAN 0
 
-#endif /*RIKEN*/
+#endif //RIKEN
 
 void 
 FortranCodeGeneration_locatedNode::unparseFloatVal(SgExpression* expr, SgUnparse_Info& info)
 {
-#if 0 /*RIKEN*/
+#if 0 //RIKEN
   // Sage node corresponds to a Fortran real constant
   SgFloatVal* float_val = isSgFloatVal(expr);
   ROSE_ASSERT(float_val != NULL);
   cur << float_val->get_value();
-#else /*RIKEN*/
+#else //RIKEN
   SgFloatVal* e = isSgFloatVal(expr);
   ROSE_ASSERT(e != NULL);
   float v = e->get_value();
-  if (v == std::numeric_limits<float>::infinity())
-  {
-    /* Approximation for inf: */
+  if (v == std::numeric_limits<float>::infinity()) {
+    // Approximation for inf:
     curprint("HUGE(0.E0)");
-  }
-  else if ((v != v) || (v == std::numeric_limits<float>::quiet_NaN()))
-  {
+  } else if ((v != v) || (v == std::numeric_limits<float>::quiet_NaN())) {
     cerr << "Error: Cannot unparse constant NaN in Fortran" << endl;
     ROSE_ASSERT(NO_LITERAL_NAN_IN_FORTRAN);
-  }
-  else if (v == std::numeric_limits<float>::signaling_NaN())
-  {
+  } else if (v == std::numeric_limits<float>::signaling_NaN()) {
     cerr << "Error: Cannot unparse constant NaN in Fortran" << endl;
     ROSE_ASSERT(NO_LITERAL_NAN_IN_FORTRAN);
-  }
-  else
-  {
+  } else {
     string s = e->get_valueString();
-    if (s != "")
-    {
+    if (s != "") {
       curprint(e->get_valueString());
-    }
-    else
-    {
+    } else {
       curprint(tostring(v));
     }
   }
-#endif /*RIKEN*/
+#endif //RIKEN
 }
 
 void
 FortranCodeGeneration_locatedNode::unparseDoubleVal(SgExpression* expr, SgUnparse_Info& info)
 {
-#if 0 /*RIKEN*/
+#if 0 //RIKEN
   // Sage node corresponds to a Fortran real constant
   SgDoubleVal* dbl_val = isSgDoubleVal(expr);
   ROSE_ASSERT(dbl_val != NULL);
   cur << dbl_val->get_value(); 
-#else /*RIKEN*/
+#else //RIKEN
   SgDoubleVal* e = isSgDoubleVal(expr);
   ROSE_ASSERT(e != NULL);
   double v = e->get_value();
-  if (v == std::numeric_limits<double>::infinity())
-  {
-    /* Approximation for inf: */
+  if (v == std::numeric_limits<double>::infinity()) {
+    // Approximation for inf:
     curprint("HUGE(0.D0)");
-  }
-  else if ((v != v) || (v == std::numeric_limits<double>::quiet_NaN()))
-  {
+  } else if ((v != v) || (v == std::numeric_limits<double>::quiet_NaN())) {
     cerr << "Error: Cannot unparse constant NaN in Fortran" << endl;
     ROSE_ASSERT(NO_LITERAL_NAN_IN_FORTRAN);
-  }
-  else if (v == std::numeric_limits<double>::signaling_NaN())
-  {
+  } else if (v == std::numeric_limits<double>::signaling_NaN()) {
     ROSE_ASSERT(NO_LITERAL_NAN_IN_FORTRAN);
-  }
-  else
-  {
+  } else {
     string s = e->get_valueString();
-    if (s != "")
-    {
+    if (s != "") {
       curprint(s);
-    }
-    else
-    {
+    } else {
       curprint(tostring(v));
     }
   }
-#endif /*RIKEN*/
+#endif //RIKEN
 }
 
 void
 FortranCodeGeneration_locatedNode::unparseLongDoubleVal(SgExpression* expr, SgUnparse_Info& info)
 {
-#if 0 /*RIKEN*/
+#if 0 //RIKEN
   // Sage node corresponds to a Fortran real constant
   SgLongDoubleVal* longdbl_val = isSgLongDoubleVal(expr);
   ROSE_ASSERT(longdbl_val != NULL);
   cur << longdbl_val->get_value();
-#else /*RIKEN*/
+#else //RIKEN
   SgLongDoubleVal* e = isSgLongDoubleVal(expr);
   ROSE_ASSERT(e != NULL);
   long double v = e->get_value();
-  if (v == std::numeric_limits<long double>::infinity())
-  {
-    /* Approximation for inf: */
+  if (v == std::numeric_limits<long double>::infinity()) {
+    // Approximation for inf:
     curprint("HUGE(0.Q0)");
-  }
-  else if ((v != v) || (v == std::numeric_limits<long double>::quiet_NaN()))
-  {
+  } else if ((v != v) || (v == std::numeric_limits<long double>::quiet_NaN())) {
     cerr << "Error: Cannot unparse constant NaN in Fortran" << endl;
     ROSE_ASSERT(NO_LITERAL_NAN_IN_FORTRAN);
-  }
-  else if (v == std::numeric_limits<long double>::signaling_NaN())
-  {
+  } else if (v == std::numeric_limits<long double>::signaling_NaN()) {
     cerr << "Error: Cannot unparse constant NaN in Fortran" << endl;
     ROSE_ASSERT(NO_LITERAL_NAN_IN_FORTRAN);
-  }
-  else
-  {
+  } else {
     string s = e->get_valueString();
-    if (s != "")
-    {
+    if (s != "") {
       curprint(s);
-    }
-    else
-    {
+    } else {
       curprint(tostring(v));
     }
   }
-#endif /*RIKEN*/
+#endif //RIKEN
 }
 
 //----------------------------------------------------------------------------

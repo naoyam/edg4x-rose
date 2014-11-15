@@ -3277,7 +3277,7 @@ FortranCodeGeneration_locatedNode::unparseWriteStatement(SgStatement* stmt, SgUn
 
      unparse_IO_Control_Support("FMT",writeStatement->get_format(),false,info);
      unparse_IO_Control_Support("REC",writeStatement->get_rec(),false,info);
-     /*RIKEN*/ /* (Fix typo "NLT" to "NML" below). */
+     //RIKEN (Fix typo "NLT" to "NML" below).
      unparse_IO_Control_Support("NML",writeStatement->get_namelist(),false,info);
      unparse_IO_Control_Support("ADVANCE",writeStatement->get_advance(),false,info);
 
@@ -4024,15 +4024,15 @@ FortranCodeGeneration_locatedNode::unparseVarDecl(SgStatement* stmt, SgInitializ
                curprint(" => NULL()");
 
            }
-#if 1 /*RIKEN*/
+#if 1 //RIKEN
            else if (isSgFunctionType(type) != NULL)
-           {
-               /* (Assume a function type as a pointer, until proper
-                  treatment of (R1213) proc_attr_spec.  It should test
-                  the argument is actually zero). */
+             {
+               // (Assume a function type as a pointer, until proper
+               // treatment of (R1213) proc_attr_spec.  It should test
+               // the argument is actually zero).
                curprint(" => NULL()");
-           }
-#endif /*RIKEN*/
+             }
+#endif //RIKEN
            else
            {
                curprint(" = ");
