@@ -4325,6 +4325,13 @@ SgFile::processRoseCommandLineOptions ( vector<string> & argv )
        set_acc_verbose(true);
      }
 
+     if (CommandlineProcessing::isOption(argv, "-rose:acc:", "nofoldline", true)) {
+       if (SgProject::get_verbose() >= 1) {
+         printf ("ACC: nofoldline \n");
+       }
+       set_acc_foldline(false);
+     }
+
      if (get_acc()) {
        argv.push_back("-D_OPENACC=201306");
      }

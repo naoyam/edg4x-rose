@@ -22,6 +22,7 @@ namespace AccSupport
 //#if (USE_ACC_IR_NODES == 1)
 
   void accUnparseDirective(UnparseLanguageIndependentConstructs* up,
+                           Unparser* unp,
                            SgAccDirective* v, SgUnparse_Info& info);
   void accUnparseDirectiveName(UnparseLanguageIndependentConstructs* up,
                                SgAccDirective* v, SgUnparse_Info& info);
@@ -33,7 +34,9 @@ namespace AccSupport
                             SgExpression* e, SgUnparse_Info& info);
 
   void accUnparseDirective(UnparseLanguageIndependentConstructs* up,
+                           Unparser* unp,
                            SgAccDirective* v, SgUnparse_Info& info) {
+    bool foldline = unp->currentFile->get_acc_foldline();
     ROSE_ASSERT(v != NULL);
     up->unparseAccPrefix(v, info);
     up->curprint(" ");
@@ -44,7 +47,13 @@ namespace AccSupport
       for (std::vector<SgAccClause*>::iterator
              i = cc.begin(); i != cc.end(); i++) {
         if (i != cc.begin()) {
-          up->curprint(", ");
+          if (!foldline) {
+            up->curprint(", ");
+          } else {
+            up->curprint(", &\n");
+            up->unparseAccPrefix(v, info);
+            up->curprint(" & ");
+          }
         }
         accUnparseClause(up, (*i), info);
       }
@@ -461,13 +470,16 @@ namespace AccSupport
 
 // Unparses an ACC block.  This is dispatched directly from
 // "unparseStatement()"; not via "unparseLanguageSpecificStatement()".
+// It takes an Unparser "unp" and passes it to ACC unparser here,
+// because "unp" is protected.
 
 void UnparseLanguageIndependentConstructs
 ::unparseAccBlock(SgStatement* stmt, SgUnparse_Info& info) {
+  Unparser* unparser = unp;
   SgAccBlock* b = isSgAccBlock(stmt);
   ROSE_ASSERT(b != NULL);
   SgAccDirective* v = b->get_directive();
-  AccSupport::accUnparseDirective(this, v, info);
+  AccSupport::accUnparseDirective(this, unparser, v, info);
   SgStatement* body = b->get_body();
   if (body != NULL) {
     unparseStatement(body, info);

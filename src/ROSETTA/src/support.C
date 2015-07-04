@@ -961,6 +961,10 @@ Grammar::setUpSupport ()
        "bool", "acc_verbose", "= false",
        NO_CONSTRUCTOR_PARAMETER, BUILD_FLAG_ACCESS_FUNCTIONS,
        NO_TRAVERSAL, NO_DELETE);
+     File.setDataPrototype(
+       "bool", "acc_foldline", "= true",
+       NO_CONSTRUCTOR_PARAMETER, BUILD_FLAG_ACCESS_FUNCTIONS,
+       NO_TRAVERSAL, NO_DELETE);
 #endif //(USE_ACC_IR_NODES == 1)
 //RIKEN
      File.setDataPrototype         ( "bool", "cray_pointer_support", "= false",

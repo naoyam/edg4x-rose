@@ -14235,6 +14235,7 @@ SgFile::initialization()
      p_acc_spot                = false;
      p_acc_parse               = false;
      p_acc_verbose             = false;
+     p_acc_foldline            = true;
 #endif
 //RIKEN
 
